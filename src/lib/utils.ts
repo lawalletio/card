@@ -186,3 +186,49 @@ export const isEmpty = (obj: object): boolean => {
   }
   return true;
 };
+
+const sAlpha: string =
+  'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_';
+const sAlphaLength: bigint = BigInt(sAlpha.length);
+
+export const uuid2suuid = (uuid: string): string => {
+  if (
+    !uuid.match(
+      /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/gi,
+    )
+  ) {
+    throw new Error('Not a valid uuid');
+  }
+
+  let n: bigint = (uuid.replace(/-/gi, '').match(/../g) ?? [])
+    .map((hexPair: string) => BigInt(parseInt(hexPair, 16)))
+    .reduce((acc: bigint, curr: bigint) => acc * 256n + curr);
+  let suuid: string = '';
+  while (n) {
+    [suuid, n] = [sAlpha[Number(n % sAlphaLength)] + suuid, n / sAlphaLength];
+  }
+  return suuid;
+};
+
+export const suuid2uuid = (suuid: string): string => {
+  if (!suuid.match(/^[a-z0-9_-]*$/gi)) {
+    throw new Error('Not a valid suuid');
+  }
+
+  let uuid: string = (suuid.match(/./g) ?? [])
+    .map((char: string) => BigInt(sAlpha.indexOf(char)))
+    .reduce((acc: bigint, curr: bigint) => acc * sAlphaLength + curr)
+    .toString(16)
+    .padStart(32, '0');
+  return (
+    uuid.substring(0, 8) +
+    '-' +
+    uuid.substring(8, 12) +
+    '-' +
+    uuid.substring(12, 16) +
+    '-' +
+    uuid.substring(16, 20) +
+    '-' +
+    uuid.substring(20, 32)
+  );
+};
