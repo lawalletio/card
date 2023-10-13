@@ -7,250 +7,72 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Account {
-  id   String @default(dbgenerated("gen_random_uuid()")) @map("id") @db.Uuid
-  name String @map("name")
+model Card {
+  uuid    String  @default(dbgenerated("gen_random_uuid()")) @map("uuid") @db.Uuid
+  id      String  @map("id")
+  k0      String  @map("k0")
+  k1      String  @map("k1")
+  k2      String  @map("k2")
+  k3      String  @map("k3")
+  k4      String  @map("k4")
+  counter Int     @default(0) @map("counter")
+  status  String  @map("status")
+  npub    String? @map("npub")
 
-  balances Balance[] @relation
+  delegations Delegation[] @relation
+  limits      Limit[]      @relation
+  payments    Payment[]    @relation
+
+  @@id([uuid])
+  @@map("cards")
+}
+
+model Delegation {
+  id              Int    @default(autoincrement())
+  cardUuid        String @map("card_uuid") @db.Uuid
+  since           BigInt @map("since")
+  until           BigInt @map("until")
+  conditions      String @map("conditions")
+  delegationToken String @map("delegation_token")
+
+  card Card @relation(fields: [cardUuid], references: [uuid], onUpdate: NoAction, onDelete: NoAction)
 
   @@id([id])
-  @@index([name])
-  @@map("accounts")
+  @@map("delegations")
 }
 
-model Token {
-  id   String @default(dbgenerated("gen_random_uuid()")) @map("id") @db.Uuid
-  name String @map("name")
+model Limit {
+  cardUuid String @map("card_uuid") @db.Uuid
+  token    String @map("token")
+  delta    Int    @map("delta")
+  amount   BigInt @map("amount")
 
-  balances Balance[] @relation
+  card Card @relation(fields: [cardUuid], references: [uuid], onUpdate: NoAction, onDelete: NoAction)
 
-  @@id([id])
-  @@index([name])
-  @@map("tokens")
+  @@id([cardUuid, token, delta])
+  @@map("limits")
 }
 
-model TransactionType {
-  id          String @default(dbgenerated("gen_random_uuid()")) @map("id") @db.Uuid
-  description String @map("description")
+model Payment {
+  uuid      String @default(dbgenerated("gen_random_uuid()")) @map("uuid") @db.Uuid
+  cardUuid  String @map("card_uuid") @db.Uuid
+  createdAt BigInt @map("created_at")
+  status    String @map("status")
 
-  transactions Transaction[] @relation
+  card          Card           @relation(fields: [cardUuid], references: [uuid], onUpdate: NoAction, onDelete: NoAction)
+  paymentTokens PaymentToken[] @relation
 
-  @@id([id])
-  @@map("Transaction_types")
+  @@id([uuid])
+  @@map("payments")
 }
 
-model Transaction {
-  id                String @default(dbgenerated("gen_random_uuid()")) @map("id") @db.Uuid
-  transactionTypeId String @map("transaction_type_id") @db.Uuid
-  payload           Json   @map("payload") @db.JsonB
-  eventId           String @map("event_id")
+model PaymentToken {
+  paymentUuid String @map("payment_uuid") @db.Uuid
+  token       String @map("token")
+  amount      BigInt @map("amount")
 
-  transactionType TransactionType   @relation(fields: [transactionTypeId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  snapshots       BalanceSnapshot[] @relation
-  event           Event             @relation(fields: [eventId], references: [signature], onUpdate: NoAction, onDelete: NoAction)
+  payment Payment @relation(fields: [paymentUuid], references: [uuid], onUpdate: NoAction, onDelete: NoAction)
 
-  @@id([id])
-  @@unique([eventId])
-  @@map("transactions")
+  @@id([paymentUuid, token])
+  @@map("payment_tokens")
 }
-
-model BalanceSnapshot {
-  id             String  @default(dbgenerated("gen_random_uuid()")) @map("id") @db.Uuid
-  prevSnapshotId String? @map("prev_id") @db.Uuid
-  amount         Decimal @map("amount")
-  transactionId  String  @map("transaction_id") @db.Uuid
-  eventId        String  @map("event_id")
-  delta          Decimal @map("delta") // denormalized
-  tokenId        String  @map("token_id") @db.Uuid // denormalized
-  accountId      String  @map("account_id") @db.Uuid // denormalized
-
-  prevSnapshot  BalanceSnapshot? @relation("link", fields: [prevSnapshotId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  nextSnapshot  BalanceSnapshot? @relation("link")
-  event         Event            @relation(fields: [eventId], references: [signature], onUpdate: NoAction, onDelete: NoAction)
-  balance       Balance          @relation("snapshot_to_balance", fields: [tokenId, accountId], references: [tokenId, accountId], onUpdate: NoAction, onDelete: NoAction)
-  transaction   Transaction      @relation(fields: [transactionId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  dummy_balance Balance?         @relation("balance_to_snapshot") @ignore
-
-  @@id([id])
-  @@unique([prevSnapshotId])
-  @@unique([eventId])
-  @@map("balance_snapshots")
-}
-
-model Balance {
-  accountId  String @map("account_id") @db.Uuid
-  tokenId    String @map("token_id") @db.Uuid
-  snapshotId String @map("snapshot_id") @db.Uuid
-  eventId    String @map("event_id")
-
-  account        Account           @relation(fields: [accountId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  token          Token             @relation(fields: [tokenId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  snapshot       BalanceSnapshot   @relation("balance_to_snapshot", fields: [snapshotId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  dummy_snapshot BalanceSnapshot[] @relation("snapshot_to_balance") @ignore
-  event          Event             @relation(fields: [eventId], references: [signature], onUpdate: NoAction, onDelete: NoAction)
-
-  @@id([accountId, tokenId])
-  @@unique([snapshotId])
-  @@unique([eventId])
-  @@map("balances")
-}
-
-model Event {
-  id        String @default(dbgenerated("gen_random_uuid()")) @map("id") @db.Uuid
-  signature String @map("signature")
-  author    String @map("author")
-  signer    String @map("signer")
-  kind      Int    @map("kind")
-  payload   Json   @map("payload") @db.JsonB
-
-  transaction     Transaction?     @relation
-  balanceSnapshot BalanceSnapshot? @relation
-  balance         Balance?         @relation
-
-  @@id([id])
-  @@unique([signature])
-  @@map("events")
-}
-
-// --
-// -- Select the UUIDs of sets of snapshots that target the same previous snapshot
-// --
-//
-// SELECT
-//   uuid AS forked_snapshot_uuid
-// FROM
-//   snapshots
-// WHERE
-//   prev_uuid IN (
-//     SELECT
-//       prev_uuid
-//     FROM
-//       snapshots
-//     WHERE
-//       prev_uuid IS NOT NULL
-//     GROUP BY
-//       prev_uuid
-//     HAVING
-//       1 < COUNT(1)
-//   )
-// ;
-
-// --
-// -- Select the UUIDs of snapshots that have a miscalculated delta value
-// --
-//
-// SELECT
-//   s.uuid AS miscalculated_delta_snapshot_uuid
-// FROM
-//   snapshots AS s
-// JOIN
-//   snapshots AS p ON s.prev_uuid = p.uuid
-// WHERE
-//   s.amount - p.amount != s.delta
-// ;
-
-// --
-// -- Select the UUIDs of snapshots with mismatched account UUIDs
-// --
-//
-// SELECT
-//   s.uuid AS mismatched_account_uuid_snapshot_uuid
-// FROM
-//   snapshots AS s
-// JOIN
-//   snapshots AS p ON s.prev_uuid = p.uuid
-// WHERE
-//   s.account_uuid != p.account_uuid
-// ;
-
-// --
-// -- Select the UUIDs of snapshots with mismatched token UUIDs
-// --
-//
-// SELECT
-//   s.uuid AS mismatched_token_uuid_snapshot_uuid
-// FROM
-//   snapshots AS s
-// JOIN
-//   snapshots AS p ON s.prev_uuid = p.uuid
-// WHERE
-//   s.token_uuid != p.token_uuid
-// ;
-
-// --
-// -- Select the UUIDs of snapshots not referenced by any other snapshot nor a balance
-// --
-//
-// SELECT
-//   s.uuid as orphaned_snapshot_uuid
-// FROM
-//   snapshots AS s
-// WHERE
-//   uuid NOT IN (
-//     (
-//       SELECT
-//         prev_uuid
-//       FROM
-//         snapshots AS o
-//       WHERE
-//         o.token_uuid = s.token_uuid
-//       AND
-//         o.account_uuid = s.account_uuid
-//       AND
-//         prev_uuid IS NOT NULL
-//     ) UNION (
-//       SELECT
-//         snapshot_uuid
-//       FROM
-//         balances AS b
-//       WHERE
-//         b.token_uuid = s.token_uuid
-//       AND
-//         b.account_uuid = s.account_uuid
-//     )
-//   )
-// ;
-
-// --
-// -- Select the transaction UUIDs and token UUIDs for unbalanced movements
-// --
-//
-// SELECT
-//   s.movement_uuid AS unbalanced_movement_uuid,
-//   s.token_uuid AS unbalanced_movement_token_uuid
-// FROM
-//   snapshots AS s
-// JOIN
-//   movements AS t ON t.uuid = s.movement_uuid
-// JOIN
-//   movement_types AS o ON o.uuid = t.movement_types_uuid
-// GROUP BY
-//   s.movement_uuid,
-//   s.token_uuid
-// HAVING
-//   (MIN(o.description) = 'OUTBOUND' AND 0 <= SUM(s.delta))
-// OR
-//   (MIN(o.description) = 'TRANSFER' AND 0 != SUM(s.delta))
-// OR
-//   (MIN(o.description) = 'INBOUND' AND SUM(s.delta) <= 0)
-// ;
-
-// --
-// -- Select the events missing some field extraction
-// --
-//
-// SELECT
-//   e.*
-// FROM
-//   events AS e
-// WHERE
-//   e.id != e.payload->>'id'
-// OR
-//   e.signature != e.payload->>'sig'
-// OR
-//   e.author != COALESCE((jsonb_path_query_first(e.payload->'tags', '$ ? (@[0] == "delegation") [1]') #>> '{}')::VARCHAR, e.payload->>'pubkey')
-// OR
-//   e.signer != e.payload->>'pubkey'
-// OR
-//   e.kind != (e.payload->>'kind')::NUMERIC
-// ;
