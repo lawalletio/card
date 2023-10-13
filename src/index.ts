@@ -3,19 +3,54 @@ import path from 'path';
 import { Debugger } from 'debug';
 import express, { Router } from 'express';
 import * as middlewares from './lib/middlewares';
-import { EmptyRoutesError, setUpRoutes } from '@lib/utils';
+import { EmptyRoutesError, setUpRoutes, setUpSubscriptions } from '@lib/utils';
 import { Context, ExtendedRequest } from '@type/request';
-import outbox from '@services/outbox';
 import 'websocket-polyfill';
 
 import { logger } from './lib/utils';
 import prisma from '@services/prisma';
+import { getReadNDK, getWriteNDK } from '@services/ndk';
+import { NDKRelay } from '@nostr-dev-kit/ndk';
+import { OutboxService } from '@services/outbox';
 
 const port = process.env.PORT || 8000;
 
 const log: Debugger = logger.extend('index');
+const warn: Debugger = log.extend('warn');
 
-const ctx: Context = { prisma, outbox };
+const writeNDK = getWriteNDK();
+const ctx: Context = { prisma, outbox: new OutboxService(getWriteNDK()) };
+
+// Instantiate ndk
+log('Instantiate NDK');
+const readNDK = getReadNDK();
+log('Subscribing...');
+const subscribed = setUpSubscriptions(
+  ctx,
+  readNDK,
+  path.join(__dirname, './nostr'),
+);
+
+if (null === subscribed) {
+  throw new Error('Error setting up subscriptions');
+}
+
+readNDK.pool.on('relay:connect', (relay: NDKRelay) => {
+  log('Connected to Relay', relay.url);
+});
+
+readNDK.on('error', (err) => {
+  log('Error connecting to Relay', err);
+});
+
+// Connect to Nostr
+log('Connecting to Nostr...');
+readNDK.connect().catch((error) => {
+  warn('Error connecting to read relay: %o', error);
+});
+writeNDK.connect().catch((error) => {
+  warn('Error connecting to write relay: %o', error);
+});
 
 // Generate routes
 log('Setting up routes...');
