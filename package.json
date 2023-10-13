@@ -1,7 +1,7 @@
 {
-  "name": "module-boilerplate",
+  "name": "card",
   "version": "0.0.0",
-  "description": "LaWallet Module Boilerplate",
+  "description": "lawallet card module",
   "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
