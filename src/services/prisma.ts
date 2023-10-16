@@ -2,12 +2,16 @@ import { logger } from '@lib/utils';
 import { PrismaClient } from '@prisma/client';
 import { Debugger } from 'debug';
 
-const log: Debugger = logger.extend('index');
+const log: Debugger = logger.extend('services:prisma');
 
-// Instantiate prisma client
-log('Instantiate prisma');
-const prisma = new PrismaClient({
-  log: [{ level: 'query', emit: 'event' }],
-});
+let prisma: PrismaClient;
 
-export default prisma;
+export function getPrisma(): PrismaClient {
+  if (!prisma) {
+    log('Instantiate prisma');
+    prisma = new PrismaClient({
+      log: [{ level: 'query', emit: 'event' }],
+    });
+  }
+  return prisma;
+}

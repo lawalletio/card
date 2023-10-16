@@ -8,10 +8,10 @@ import { Context, ExtendedRequest } from '@type/request';
 import 'websocket-polyfill';
 
 import { logger } from './lib/utils';
-import prisma from '@services/prisma';
 import { getReadNDK, getWriteNDK } from '@services/ndk';
 import { NDKRelay } from '@nostr-dev-kit/ndk';
 import { OutboxService } from '@services/outbox';
+import { getPrisma } from '@services/prisma';
 
 const port = process.env.PORT || 8000;
 
@@ -19,7 +19,10 @@ const log: Debugger = logger.extend('index');
 const warn: Debugger = log.extend('warn');
 
 const writeNDK = getWriteNDK();
-const ctx: Context = { prisma, outbox: new OutboxService(getWriteNDK()) };
+const ctx: Context = {
+  prisma: getPrisma(),
+  outbox: new OutboxService(getWriteNDK()),
+};
 
 // Instantiate ndk
 log('Instantiate NDK');
