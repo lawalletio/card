@@ -8,23 +8,35 @@ datasource db {
 }
 
 model Card {
-  uuid    String  @default(dbgenerated("gen_random_uuid()")) @map("uuid") @db.Uuid
-  id      String  @map("id")
-  k0      String  @map("k0")
-  k1      String  @map("k1")
-  k2      String  @map("k2")
-  k3      String  @map("k3")
-  k4      String  @map("k4")
-  counter Int     @default(0) @map("counter")
-  status  String  @map("status")
-  npub    String? @map("npub")
+  uuid       String  @default(dbgenerated("gen_random_uuid()")) @map("uuid") @db.Uuid
+  id         String  @map("id")
+  k0         String  @map("k0")
+  k1         String  @map("k1")
+  k2         String  @map("k2")
+  k3         String  @map("k3")
+  k4         String  @map("k4")
+  counter    Int     @default(0) @map("counter")
+  status     String  @map("status")
+  npub       String? @map("npub")
+  designUuid String? @map("design_uuid") @db.Uuid
 
+  design      CardDesign?  @relation(fields: [designUuid], references: [uuid], onUpdate: NoAction, onDelete: NoAction)
   delegations Delegation[] @relation
   limits      Limit[]      @relation
   payments    Payment[]    @relation
 
   @@id([uuid])
   @@map("cards")
+}
+
+model CardDesign {
+  uuid String @default(dbgenerated("gen_random_uuid()")) @map("uuid") @db.Uuid
+  name String @map("name")
+
+  cards Card[] @relation
+
+  @@id([uuid])
+  @@map("card_design")
 }
 
 model Delegation {
