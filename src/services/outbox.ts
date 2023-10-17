@@ -30,5 +30,5 @@ export class OutboxService implements Outbox {
 }
 
 export interface Outbox {
-  publish(event: NostrEvent): void;
+  publish(event: NostrEvent): Promise<void>;
 }
