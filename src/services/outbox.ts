@@ -1,5 +1,5 @@
 import { Debugger } from 'debug';
-import NDK, { NDKEvent, NostrEvent } from '@nostr-dev-kit/ndk';
+import NDK, { NDKEvent, NDKRelaySet, NostrEvent } from '@nostr-dev-kit/ndk';
 
 import { logger } from '@lib/utils';
 
@@ -9,13 +9,14 @@ const error: Debugger = log.extend('warn');
 export class OutboxService implements Outbox {
   constructor(private readonly ndk: NDK) {}
 
-  publish(event: NostrEvent): Promise<void> {
+  publish(event: NostrEvent, relaySet?: NDKRelaySet): Promise<void> {
     const ndkEvent = new NDKEvent(this.ndk, event);
     return new Promise((resolve, reject) => {
       ndkEvent
-        .publish()
+        .publish(relaySet)
         .then((relays) => {
           if (0 === relays.size) {
+            error('Could not publish to any relay event %s', event.id);
             reject('Did not publish to any relay');
           } else {
             resolve();
@@ -30,5 +31,5 @@ export class OutboxService implements Outbox {
 }
 
 export interface Outbox {
-  publish(event: NostrEvent): Promise<void>;
+  publish(event: NostrEvent, relaySet?: NDKRelaySet): Promise<void>;
 }
