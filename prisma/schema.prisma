@@ -49,6 +49,7 @@ model Delegation {
   holder Holder @relation(fields: [delegatorPubKey], references: [pubKey], onUpdate: NoAction, onDelete: NoAction)
 
   @@id([uuid])
+  @@unique([delegationToken])
   @@map("delegations")
 }
 
@@ -112,6 +113,7 @@ model Design {
   ntag424 Ntag424[] @relation
 
   @@id([uuid])
+  @@unique([name])
   @@map("designs")
 }
 
