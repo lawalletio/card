@@ -13,6 +13,7 @@
   "include": [
     "./tests/**/*",
     "./src/**/*",
-    "./jest.config.js"
+    "./jest.config.js",
+    "./prisma/**/*"
   ]
 }

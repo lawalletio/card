@@ -8,83 +8,127 @@ datasource db {
 }
 
 model Card {
-  uuid       String  @default(dbgenerated("gen_random_uuid()")) @map("uuid") @db.Uuid
-  id         String  @map("id")
-  k0         String  @map("k0")
-  k1         String  @map("k1")
-  k2         String  @map("k2")
-  k3         String  @map("k3")
-  k4         String  @map("k4")
-  counter    Int     @default(0) @map("counter")
-  status     String  @map("status")
-  npub       String? @map("npub")
-  designUuid String? @map("design_uuid") @db.Uuid
+  uuid        String  @default(dbgenerated("gen_random_uuid()")) @map("uuid") @db.Uuid
+  name        String  @map("name")
+  description String  @map("description")
+  enabled     Boolean @map("is_enabled")
 
-  design      CardDesign?  @relation(fields: [designUuid], references: [uuid], onUpdate: NoAction, onDelete: NoAction)
-  delegations Delegation[] @relation
-  limits      Limit[]      @relation
-  payments    Payment[]    @relation
+  holderPubKey String? @map("holder_pub_key")
+  ntag424Cid   String  @map("ntag424_cid")
+  stateUuid    String  @map("state_uuid") @db.Uuid
+  designUuid   String  @map("design_uuid") @db.Uuid
+
+  holder   Holder?   @relation(fields: [holderPubKey], references: [pubKey], onUpdate: NoAction, onDelete: NoAction)
+  ntag424  Ntag424   @relation(fields: [ntag424Cid], references: [cid], onUpdate: NoAction, onDelete: NoAction)
+  design   Design    @relation(fields: [designUuid], references: [uuid], onUpdate: NoAction, onDelete: NoAction)
+  limits   Limit[]   @relation
+  payments Payment[] @relation
 
   @@id([uuid])
+  @@unique([ntag424Cid])
   @@map("cards")
 }
 
-model CardDesign {
-  uuid String @default(dbgenerated("gen_random_uuid()")) @map("uuid") @db.Uuid
-  name String @map("name")
+model Holder {
+  pubKey String @map("pub_key")
+
+  cards            Card[]             @relation
+  delegations      Delegation[]       @relation
+  trustedMerchants TrustedMerchants[] @relation
+
+  @@id([pubKey])
+  @@map("holders")
+}
+
+model Delegation {
+  uuid            String   @default(dbgenerated("gen_random_uuid()")) @map("uuid") @db.Uuid
+  delegatorPubKey String   @map("delegator_pub_key")
+  since           DateTime @map("since")
+  until           DateTime @map("until")
+  conditions      String   @map("conditions")
+  delegationToken String   @map("delegation_token")
+
+  holder Holder @relation(fields: [delegatorPubKey], references: [pubKey], onUpdate: NoAction, onDelete: NoAction)
+
+  @@id([uuid])
+  @@map("delegations")
+}
+
+model Design {
+  uuid        String @default(dbgenerated("gen_random_uuid()")) @map("uuid") @db.Uuid
+  name        String @map("name")
+  description String @map("description")
 
   cards Card[] @relation
 
   @@id([uuid])
-  @@map("card_design")
-}
-
-model Delegation {
-  id              Int    @default(autoincrement())
-  cardUuid        String @map("card_uuid") @db.Uuid
-  since           BigInt @map("since")
-  until           BigInt @map("until")
-  conditions      String @map("conditions")
-  delegationToken String @map("delegation_token")
-
-  card Card @relation(fields: [cardUuid], references: [uuid], onUpdate: NoAction, onDelete: NoAction)
-
-  @@id([id])
-  @@map("delegations")
+  @@map("designs")
 }
 
 model Limit {
+  uuid        String @default(dbgenerated("gen_random_uuid()")) @map("uuid") @db.Uuid
+  name        String @map("name")
+  description String @map("description")
+  token       String @map("token")
+  amount      BigInt @map("amount")
+  delta       Int    @map("delta")
+
   cardUuid String @map("card_uuid") @db.Uuid
-  token    String @map("token")
-  delta    Int    @map("delta")
-  amount   BigInt @map("amount")
 
   card Card @relation(fields: [cardUuid], references: [uuid], onUpdate: NoAction, onDelete: NoAction)
 
-  @@id([cardUuid, token, delta])
+  @@id([uuid])
+  @@unique([cardUuid, token, delta])
   @@map("limits")
 }
 
 model Payment {
-  uuid      String @default(dbgenerated("gen_random_uuid()")) @map("uuid") @db.Uuid
-  cardUuid  String @map("card_uuid") @db.Uuid
-  createdAt BigInt @map("created_at")
-  status    String @map("status")
+  uuid      String   @default(dbgenerated("gen_random_uuid()")) @map("uuid") @db.Uuid
+  createdAt DateTime @map("created_at")
+  status    String   @map("status")
+  token     String   @map("token")
+  amount    BigInt   @map("amount")
 
-  card          Card           @relation(fields: [cardUuid], references: [uuid], onUpdate: NoAction, onDelete: NoAction)
-  paymentTokens PaymentToken[] @relation
+  cardUuid String @map("card_uuid") @db.Uuid
+
+  card Card @relation(fields: [cardUuid], references: [uuid], onUpdate: NoAction, onDelete: NoAction)
 
   @@id([uuid])
   @@map("payments")
 }
 
-model PaymentToken {
-  paymentUuid String @map("payment_uuid") @db.Uuid
-  token       String @map("token")
-  amount      BigInt @map("amount")
+model Ntag424 {
+  cid String @map("cid")
+  k0  String @map("k0")
+  k1  String @map("k1")
+  k2  String @map("k2")
+  k3  String @map("k3")
+  k4  String @map("k4")
+  ctr Int    @map("ctr")
+  otc String @map("otc")
 
-  payment Payment @relation(fields: [paymentUuid], references: [uuid], onUpdate: NoAction, onDelete: NoAction)
+  card Card? @relation
 
-  @@id([paymentUuid, token])
-  @@map("payment_tokens")
+  @@id([cid])
+  @@map("ntag424s")
+}
+
+model Merchant {
+  pubKey String @map("pub_key")
+
+  trustedMerchants TrustedMerchants[] @relation
+
+  @@id([pubKey])
+  @@map("merchants")
+}
+
+model TrustedMerchants {
+  holderPubKey   String @map("holder_pub_key")
+  merchantPubKey String @map("merchant_pub_key")
+
+  holder   Holder   @relation(fields: [holderPubKey], references: [pubKey], onUpdate: NoAction, onDelete: NoAction)
+  merchant Merchant @relation(fields: [merchantPubKey], references: [pubKey], onUpdate: NoAction, onDelete: NoAction)
+
+  @@id([holderPubKey, merchantPubKey])
+  @@map("trusted_merchants")
 }

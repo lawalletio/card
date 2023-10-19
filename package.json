@@ -29,6 +29,9 @@
   "keywords": [],
   "author": "Agustin Kassis",
   "license": "MIT",
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  },
   "dependencies": {
     "@nostr-dev-kit/ndk": "^0.8.23",
     "@prisma/client": "5.2.0",
