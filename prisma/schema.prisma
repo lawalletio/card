@@ -16,11 +16,9 @@ model Card {
   holderPubKey String? @map("holder_pub_key")
   ntag424Cid   String  @map("ntag424_cid")
   stateUuid    String  @map("state_uuid") @db.Uuid
-  designUuid   String  @map("design_uuid") @db.Uuid
 
   holder   Holder?   @relation(fields: [holderPubKey], references: [pubKey], onUpdate: NoAction, onDelete: NoAction)
   ntag424  Ntag424   @relation(fields: [ntag424Cid], references: [cid], onUpdate: NoAction, onDelete: NoAction)
-  design   Design    @relation(fields: [designUuid], references: [uuid], onUpdate: NoAction, onDelete: NoAction)
   limits   Limit[]   @relation
   payments Payment[] @relation
 
@@ -52,17 +50,6 @@ model Delegation {
 
   @@id([uuid])
   @@map("delegations")
-}
-
-model Design {
-  uuid        String @default(dbgenerated("gen_random_uuid()")) @map("uuid") @db.Uuid
-  name        String @map("name")
-  description String @map("description")
-
-  cards Card[] @relation
-
-  @@id([uuid])
-  @@map("designs")
 }
 
 model Limit {
@@ -107,10 +94,25 @@ model Ntag424 {
   ctr Int     @map("ctr")
   otc String? @map("otc")
 
+  designUuid String @map("design_uuid") @db.Uuid
+
+  design Design @relation(fields: [designUuid], references: [uuid], onUpdate: NoAction, onDelete: NoAction)
+
   card Card? @relation
 
   @@id([cid])
   @@map("ntag424s")
+}
+
+model Design {
+  uuid        String @default(dbgenerated("gen_random_uuid()")) @map("uuid") @db.Uuid
+  name        String @map("name")
+  description String @map("description")
+
+  ntag424 Ntag424[] @relation
+
+  @@id([uuid])
+  @@map("designs")
 }
 
 model Merchant {
