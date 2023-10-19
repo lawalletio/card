@@ -15,6 +15,9 @@ const warn: debug.Debugger = logger.extend('lib:utils:warn');
 export class EmptyRoutesError extends Error {}
 export class DuplicateRoutesError extends Error {}
 
+export const uuidRegex =
+  /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/gi;
+
 const methods: RouteMethod[] = ['get', 'post', 'put', 'patch', 'delete'];
 const filesWithExtensionsWithoutExtensions = (
   path: string,
@@ -197,11 +200,7 @@ const sAlpha: string =
 const sAlphaLength: bigint = BigInt(sAlpha.length);
 
 export const uuid2suuid = (uuid: string): string => {
-  if (
-    !uuid.match(
-      /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/gi,
-    )
-  ) {
+  if (!uuid.match(uuidRegex)) {
     throw new Error('Not a valid uuid');
   }
 
