@@ -98,14 +98,14 @@ model Payment {
 }
 
 model Ntag424 {
-  cid String @map("cid")
-  k0  String @map("k0")
-  k1  String @map("k1")
-  k2  String @map("k2")
-  k3  String @map("k3")
-  k4  String @map("k4")
-  ctr Int    @map("ctr")
-  otc String @map("otc")
+  cid String  @map("cid")
+  k0  String  @map("k0")
+  k1  String  @map("k1")
+  k2  String  @map("k2")
+  k3  String  @map("k3")
+  k4  String  @map("k4")
+  ctr Int     @map("ctr")
+  otc String? @map("otc")
 
   card Card? @relation
 
