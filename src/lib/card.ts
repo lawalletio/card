@@ -79,7 +79,7 @@ export const retrieveNtag424FromPC = async (
   const ctrBytes: Buffer = pBytes.subarray(8, 11);
 
   const cid: string = cidBytes.toString('hex').toLowerCase();
-  const ctrNew: number = parseInt('0x' + ctrBytes.toString('hex'));
+  const ctrNew: number = (ctrBytes[2] << 16) | (ctrBytes[1] << 8) | ctrBytes[0]; // LSB
 
   const ntag424: Ntag424 | null = await prisma.ntag424.findUnique({
     where: { cid: cid, k1: k1 },
