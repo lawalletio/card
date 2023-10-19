@@ -7,7 +7,7 @@ import { EmptyRoutesError, setUpRoutes, setUpSubscriptions } from '@lib/utils';
 import { Context, ExtendedRequest } from '@type/request';
 import 'websocket-polyfill';
 
-import { logger } from './lib/utils';
+import { logger } from '@lib/utils';
 import { getReadNDK, getWriteNDK } from '@services/ndk';
 import { NDKRelay } from '@nostr-dev-kit/ndk';
 import { OutboxService } from '@services/outbox';
