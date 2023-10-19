@@ -27,7 +27,9 @@ const debug: Debugger = log.extend('debug');
 const k1: string = requiredEnvVar('SERVER_AES_KEY_HEX').toLowerCase();
 const prisma: PrismaClient = new PrismaClient();
 
-const federationId: string = requiredEnvVar('LAWALLET_FEDERATION_ID').toLowerCase();
+const federationId: string = requiredEnvVar(
+  'LAWALLET_FEDERATION_ID',
+).toLowerCase();
 
 const laWalletHeader: string = 'X-LaWallet-Settings';
 const defaultToken: string = 'BTC';
@@ -152,7 +154,6 @@ const checkStatus = (card: Card): boolean => {
 
   return true;
 };
-
 
 const checkLimits = (card: Card, tokens: string[] = []): boolean => {
   if (0 === tokens.length) {
