@@ -150,6 +150,26 @@ const checkStatus = (card: Card): boolean => {
 };
 
 /**
+ * Parse the federation header to extract the federation ID and tokens to retrieve
+ *
+ * @param header  Header to parse (possibly undefined)
+ * @returns  A dictionary of "federation" and "tokens" keys, this last one an array of strings
+ */
+const parseFederationHeader = (
+  header: string | undefined,
+): { federation: string | null; tokens: string[] } => {
+  const m =
+    /^(?<federation>[a-zA-Z0-9_-]+)(;tokens=(?<tokens>[a-zA-Z0-9_-]+(:[a-zA-Z0-9_-]+)*))?$/g.exec(
+      header ?? '',
+    );
+  const federation: string | null = m?.groups?.federation ?? null;
+  const tokens: string[] = (federation === federationId
+    ? m?.groups?.tokens?.split(':')
+    : null) ?? [defaultToken];
+  return { federation: federation, tokens: tokens };
+};
+
+/**
  * Retrieve the limits available for the given tokens
  *
  * @param card  The card to retrieve tokens for
@@ -218,9 +238,6 @@ const handler = async (req: ExtendedRequest, res: Response) => {
     return;
   }
 
-  // {federation_id};tokens={token_1}:{token_2}:...:{token_n}
-  req.header(laWalletHeader);
-
   // 2. check status & trusted merchants
   if (!checkStatus(card)) {
     res.status(400).send();
@@ -228,7 +245,16 @@ const handler = async (req: ExtendedRequest, res: Response) => {
   }
 
   // 3. check limits
+  const { federation, tokens } = parseFederationHeader(
+    req.header(laWalletHeader),
+  );
+  const limits: { [_: string]: number } = await getLimits(card, tokens);
 
+  if (federation === federationId) {
+    // send extended response
+  } else {
+    // send boltcard response
+  }
   res.status(200).json({ ok: true }).send();
 };
 
