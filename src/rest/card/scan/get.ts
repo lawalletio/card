@@ -3,7 +3,7 @@ import type { Response } from 'express';
 import type { ExtendedRequest } from '@type/request';
 
 import { logger, requiredEnvVar, uuid2suuid } from '@lib/utils';
-import { retrieveCardFromPC } from '@lib/card';
+import { retrieveNtag424FromPC } from '@lib/card';
 
 import { Card, Prisma, PrismaClient } from '@prisma/client';
 
@@ -165,10 +165,16 @@ const buildQuasiResponse = (
  */
 const handler = async (req: ExtendedRequest, res: Response) => {
   // 1. check query params
-  const card: Card | null = await retrieveCardFromPC(
-    req.query.p as string | undefined,
-    req.query.c as string | undefined,
-  );
+  const card: Card | null = await prisma.card.findUnique({
+    where: {
+      ntag424Cid: (
+        await retrieveNtag424FromPC(
+          req.query.p as string | undefined,
+          req.query.c as string | undefined,
+        )
+      )?.cid,
+    },
+  });
   if (null === card) {
     res
       .status(400)

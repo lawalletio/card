@@ -7,7 +7,7 @@ import { logger, requiredEnvVar } from '@lib/utils';
 import { AesCmac } from 'aes-cmac';
 import { Decipher, createDecipheriv } from 'crypto';
 
-import { Card, Prisma, PrismaClient } from '@prisma/client';
+import { Ntag424, PrismaClient } from '@prisma/client';
 
 const log: Debugger = logger.extend('rest:card:scan');
 const debug: Debugger = log.extend('debug');
@@ -50,16 +50,16 @@ const cmac = async (cid: Buffer, ctr: Buffer, k2: string): Promise<string> => {
 };
 
 /**
- * Given the "p" and "c" arguments in the scan url, retrieve the associated Card entity and update the card tap-counter
+ * Given the "p" and "c" arguments in the scan url, retrieve the associated Ntag424 entity and update the card tap-counter
  *
  * @param p  The scan url's "p" parameter (ie.  AES(k1     , ctr || cid))
  * @param c  The scan url's "c" parameter (ie. CMAC(k2[cid], ctr || cid))
- * @returns  The retrieved Card entity or null if errors encountered
+ * @returns  The retrieved Ntag424 entity or null if errors encountered
  */
-export const retrieveCardFromPC = async (
+export const retrieveNtag424FromPC = async (
   p: string | undefined,
   c: string | undefined,
-): Promise<Card | null> => {
+): Promise<Ntag424 | null> => {
   if (typeof p !== 'string' || !/^[A-F0-9]{32}$/.test(p)) {
     debug('Malformed p: not a 32-char uppercase hex value');
     return null;
@@ -81,10 +81,8 @@ export const retrieveCardFromPC = async (
   const cid: string = cidBytes.toString('hex').toLowerCase();
   const ctrNew: number = parseInt('0x' + ctrBytes.toString('hex'));
 
-  type Ntag424WithCard = Prisma.Ntag424GetPayload<{ include: { card: true } }>;
-  const ntag424: Ntag424WithCard | null = await prisma.ntag424.findUnique({
+  const ntag424: Ntag424 | null = await prisma.ntag424.findUnique({
     where: { cid: cid, k1: k1 },
-    include: { card: true },
   });
   if (null === ntag424) {
     debug('No suitable card found');
@@ -108,5 +106,5 @@ export const retrieveCardFromPC = async (
     data: { ctr: ctrNew },
   });
 
-  return ntag424.card;
+  return ntag424;
 };
