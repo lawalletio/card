@@ -205,7 +205,7 @@ export const uuid2suuid = (uuid: string): string => {
     throw new Error('Not a valid uuid');
   }
 
-  let n: bigint = (uuid.replace(/-/gi, '').match(/../g) ?? [])
+  let n: bigint = (uuid.replace(/-/g, '').match(/../g) ?? [])
     .map((hexPair: string) => BigInt(parseInt(hexPair, 16)))
     .reduce((acc: bigint, curr: bigint) => acc * 256n + curr);
   let suuid: string = '';
