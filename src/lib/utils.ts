@@ -199,9 +199,9 @@ const sAlpha: string =
   'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_';
 const sAlphaLength: bigint = BigInt(sAlpha.length);
 
-export const uuid2suuid = (uuid: string): string => {
+export const uuid2suuid = (uuid: string): string | null => {
   if (!uuid.match(uuidRegex)) {
-    throw new Error('Not a valid uuid');
+    return null;
   }
 
   let n: bigint = (uuid.replace(/-/g, '').match(/../g) ?? [])
@@ -214,9 +214,9 @@ export const uuid2suuid = (uuid: string): string => {
   return suuid;
 };
 
-export const suuid2uuid = (suuid: string): string => {
+export const suuid2uuid = (suuid: string): string | null => {
   if (!suuid.match(/^[a-z0-9_-]*$/gi)) {
-    throw new Error('Not a valid suuid');
+    return null;
   }
 
   let n: bigint = (suuid.match(/./g) ?? [])
