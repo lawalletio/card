@@ -57,7 +57,7 @@ model Limit {
   uuid        String @default(dbgenerated("gen_random_uuid()")) @map("uuid") @db.Uuid
   name        String @map("name")
   description String @map("description")
-  token       String @map("token")   // BTC amounts are expressed in MILLISATOSHIS (1 BTC = 100000000000 mSAT = 1e11 mSAT)
+  token       String @map("token") // BTC amounts are expressed in MILLISATOSHIS (1 BTC = 100000000000 mSAT = 1e11 mSAT)
   amount      BigInt @map("amount")
   delta       Int    @map("delta")
 
@@ -74,7 +74,7 @@ model Payment {
   uuid      String   @default(dbgenerated("gen_random_uuid()")) @map("uuid") @db.Uuid
   createdAt DateTime @map("created_at")
   status    String   @map("status")
-  token     String   @map("token")   // BTC amounts are expressed in MILLISATOSHIS (1 BTC = 100000000000 mSAT = 1e11 mSAT)
+  token     String   @map("token") // BTC amounts are expressed in MILLISATOSHIS (1 BTC = 100000000000 mSAT = 1e11 mSAT)
   amount    BigInt   @map("amount")
 
   cardUuid String @map("card_uuid") @db.Uuid
