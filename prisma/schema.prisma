@@ -17,10 +17,11 @@ model Card {
   ntag424Cid   String  @map("ntag424_cid")
   stateUuid    String  @map("state_uuid") @db.Uuid
 
-  holder   Holder?   @relation(fields: [holderPubKey], references: [pubKey], onUpdate: NoAction, onDelete: NoAction)
-  ntag424  Ntag424   @relation(fields: [ntag424Cid], references: [cid], onUpdate: NoAction, onDelete: NoAction)
-  limits   Limit[]   @relation
-  payments Payment[] @relation
+  holder           Holder?          @relation(fields: [holderPubKey], references: [pubKey], onUpdate: NoAction, onDelete: NoAction)
+  ntag424          Ntag424          @relation(fields: [ntag424Cid], references: [cid], onUpdate: NoAction, onDelete: NoAction)
+  limits           Limit[]          @relation
+  paymentRequestss PaymentRequest[] @relation
+  payments         Payment[]        @relation
 
   @@id([uuid])
   @@unique([ntag424Cid])
@@ -68,6 +69,19 @@ model Limit {
   @@id([uuid])
   @@unique([cardUuid, token, delta])
   @@map("limits")
+}
+
+model PaymentRequest {
+  uuid      String   @default(dbgenerated("gen_random_uuid()")) @map("uuid") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  response  Json     @map("response") @db.Json
+
+  cardUuid String @map("card_uuid") @db.Uuid
+
+  card Card @relation(fields: [cardUuid], references: [uuid], onUpdate: NoAction, onDelete: NoAction)
+
+  @@id([uuid])
+  @@map("payment_requests")
 }
 
 model Payment {
