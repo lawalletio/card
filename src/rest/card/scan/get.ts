@@ -149,7 +149,17 @@ const checkStatus = (card: Card): boolean => {
   return true;
 };
 
-const getLimits = async (card: Card, tokens: string[] = []): Promise<{ [_: string]: number }> => {
+/**
+ * Retrieve the limits available for the given tokens
+ *
+ * @param card  The card to retrieve tokens for
+ * @param tokens  The tokens to retrieve
+ * @returns  A dictionary mapping tokens to their remaining permissible amounts
+ */
+const getLimits = async (
+  card: Card,
+  tokens: string[] = [],
+): Promise<{ [_: string]: number }> => {
   if (0 === tokens.length) {
     tokens = [defaultToken];
   }
