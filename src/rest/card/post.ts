@@ -109,7 +109,6 @@ const handler = async (req: ExtendedRequest, res: Response) => {
         case U_CONSTRAINT_VIOLATION:
           res.status(409).send();
           return;
-          break;
         default:
           break;
       }
