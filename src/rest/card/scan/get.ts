@@ -144,6 +144,10 @@ const handler = async (req: ExtendedRequest, res: Response) => {
     req.header(laWalletHeader),
   );
   const limits: { [_: string]: number } = await getLimits(card, tokens);
+  if (0 === limits.length) {
+    res.status(400).json({ status: 'ERROR', reason: 'Limits exceeded' }).send();
+    return;
+  }
 
   if (federation === federationId) {
     // send extended response
