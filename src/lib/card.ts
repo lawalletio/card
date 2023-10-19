@@ -5,7 +5,7 @@ import { Debugger } from 'debug';
 import { logger, requiredEnvVar } from '@lib/utils';
 
 import { AesCmac } from 'aes-cmac';
-import { Decipher, createDecipheriv } from 'crypto';
+import { Cipher, Decipher, createCipheriv, createDecipheriv } from 'crypto';
 
 import { Ntag424, PrismaClient } from '@prisma/client';
 
@@ -107,4 +107,56 @@ export const retrieveNtag424FromPC = async (
   });
 
   return ntag424;
+};
+
+/**
+ * Generate "p" and "c" parameters for given values
+ *
+ * @param k2  Key to use (viz. k2) to calculate the CMAC, as a 32-character hex-string
+ * @param cid  Card ID, as a 14-character hex-string
+ * @param ctr  Card tap-counter, as a number
+ * @returns
+ */
+export const generatePC = async (
+  k2: string,
+  cid: string,
+  ctr: number,
+): Promise<{ p: string; c: string }> => {
+  const ctrBytes: Buffer = Buffer.from(
+    ctr.toString(16).padStart(6, '0').substring(0, 6),
+    'hex',
+  );
+  const cidCtr: Buffer = Buffer.from([
+    0xc7,
+    ...Buffer.from(cid, 'hex'),
+    ctrBytes[0],
+    ctrBytes[1],
+    ctrBytes[2],
+  ]);
+  const plaintextAes: Buffer = Buffer.from([0xc7, ...cidCtr]);
+  const plaintextCmac: Buffer = Buffer.from([
+    0x3c,
+    0xc3,
+    0x00,
+    0x01,
+    0x00,
+    0x80,
+    ...cidCtr,
+  ]);
+
+  const cipher: Cipher = createCipheriv(
+    'aes128',
+    Buffer.from(k1, 'hex'),
+    Buffer.from('00000000000000000000000000000000', 'hex'),
+  ).setAutoPadding(false);
+  const aesCmac: AesCmac = new AesCmac(Buffer.from(k2, 'hex'));
+
+  cipher.update(plaintextAes);
+
+  return {
+    p: cipher.final('hex').toLowerCase(),
+    c: Buffer.from(await aesCmac.calculate(plaintextCmac))
+      .toString('hex')
+      .toLowerCase(),
+  };
 };
