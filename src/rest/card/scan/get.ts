@@ -42,7 +42,7 @@ const defaultToken: string = 'BTC';
  */
 const decrypt = (key: string, ciphertext: string): string => {
   const decipher: Decipher = createDecipheriv(
-    'aes256',
+    'aes128',
     Buffer.from(key, 'hex'),
     Buffer.from('00000000000000000000000000000000', 'hex'),
   ).setAutoPadding(false);
