@@ -123,13 +123,13 @@ const handler = async (req: ExtendedRequest, res: Response) => {
     req.query.c as string | undefined,
   );
   if (null === card) {
-    res.status(400).send();
+    res.status(400).json({ status: "ERROR", reason: "Failed to retrieve card data" }).send();
     return;
   }
 
   // 2. check status & trusted merchants
   if (!checkStatus(card)) {
-    res.status(400).send();
+    res.status(400).json({ status: "ERROR", reason: "Failed to retrieve card data" }).send();
     return;
   }
 
