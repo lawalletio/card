@@ -94,7 +94,7 @@ const handler = async (req: ExtendedRequest, res: Response) => {
   const data = {
     cid: content.cid,
     k0: randomHex(16),
-    k1: requiredEnvVar('K1_ENC_KEY'),
+    k1: requiredEnvVar('SERVER_AES_KEY_HEX'),
     k2: randomHex(16),
     k3: randomHex(16),
     k4: randomHex(16),
