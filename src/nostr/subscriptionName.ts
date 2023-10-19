@@ -1,7 +1,7 @@
 import { Debugger } from 'debug';
 import type { NDKFilter, NostrEvent } from '@nostr-dev-kit/ndk';
 
-import { logger } from '../lib/utils';
+import { logger } from '@lib/utils';
 import { Context } from '@type/request';
 
 const log: Debugger = logger.extend('nostr:subscriptionName');

@@ -2,7 +2,7 @@ import { Debugger } from 'debug';
 import type { Response } from 'express';
 import type { ExtendedRequest } from '@type/request';
 
-import { logger } from '../../../lib/utils';
+import { logger } from '@lib/utils';
 
 const log: Debugger = logger.extend('rest:folder:param');
 

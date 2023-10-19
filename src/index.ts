@@ -2,7 +2,7 @@ import app from './app';
 import path from 'path';
 import { Debugger } from 'debug';
 import express, { Router } from 'express';
-import * as middlewares from './lib/middlewares';
+import * as middlewares from '@lib/middlewares';
 import { EmptyRoutesError, setUpRoutes, setUpSubscriptions } from '@lib/utils';
 import { Context, ExtendedRequest } from '@type/request';
 import 'websocket-polyfill';

@@ -4,7 +4,7 @@ import morgan from 'morgan';
 import helmet from 'helmet';
 import cors from 'cors';
 
-import { logger } from './lib/utils';
+import { logger } from '@lib/utils';
 
 const log: Debugger = logger.extend('app');
 
