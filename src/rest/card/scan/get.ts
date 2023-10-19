@@ -6,8 +6,8 @@ import type { ExtendedRequest } from '@type/request';
 
 import { logger, requiredEnvVar } from '@lib/utils';
 
-import { enc, lib, mode, pad, AES } from 'crypto-js';
 import { AesCmac } from 'aes-cmac';
+import { Decipher, createDecipheriv } from 'crypto';
 
 import {
   Card,
@@ -41,19 +41,13 @@ const defaultToken: string = 'BTC';
  * @returns  The decrypted result, as a lowercase hex-string
  */
 const decrypt = (key: string, ciphertext: string): string => {
-  return AES.decrypt(
-    lib.CipherParams.create({
-      ciphertext: enc.Hex.parse(ciphertext),
-    }),
-    enc.Hex.parse(key),
-    {
-      iv: enc.Hex.parse('00000000000000000000000000000000'),
-      mode: mode.CBC,
-      padding: pad.NoPadding,
-    },
-  )
-    .toString(enc.Hex)
-    .toLowerCase();
+  const decipher: Decipher = createDecipheriv(
+    'aes256',
+    Buffer.from(key, 'hex'),
+    Buffer.from('00000000000000000000000000000000', 'hex'),
+  ).setAutoPadding(false);
+  decipher.update(Buffer.from(ciphertext, 'hex'));
+  return decipher.final('hex').toLowerCase();
 };
 
 /**
