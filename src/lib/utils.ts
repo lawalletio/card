@@ -205,7 +205,7 @@ export const uuid2suuid = (uuid: string): string => {
     throw new Error('Not a valid uuid');
   }
 
-  let n: bigint = (uuid.replace(/-/gi, '').match(/../g) ?? [])
+  let n: bigint = (uuid.replace(/-/g, '').match(/../g) ?? [])
     .map((hexPair: string) => BigInt(parseInt(hexPair, 16)))
     .reduce((acc: bigint, curr: bigint) => acc * 256n + curr);
   let suuid: string = '';
@@ -220,11 +220,14 @@ export const suuid2uuid = (suuid: string): string => {
     throw new Error('Not a valid suuid');
   }
 
-  let uuid: string = (suuid.match(/./g) ?? [])
+  let n: bigint = (suuid.match(/./g) ?? [])
     .map((char: string) => BigInt(sAlpha.indexOf(char)))
-    .reduce((acc: bigint, curr: bigint) => acc * sAlphaLength + curr)
-    .toString(16)
-    .padStart(32, '0');
+    .reduce((acc: bigint, curr: bigint) => acc * sAlphaLength + curr);
+  if (0xffffffffffffffffffffffffffffffffn < n) {
+    throw new Error('Out of range');
+  }
+  let uuid = n.toString(16).padStart(32, '0');
+
   return (
     uuid.substring(0, 8) +
     '-' +

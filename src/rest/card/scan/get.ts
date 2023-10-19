@@ -6,8 +6,8 @@ import type { ExtendedRequest } from '@type/request';
 
 import { logger, requiredEnvVar } from '@lib/utils';
 
-import { enc, lib, mode, pad, AES } from 'crypto-js';
 import { AesCmac } from 'aes-cmac';
+import { Decipher, createDecipheriv } from 'crypto';
 
 import {
   Card,
@@ -41,19 +41,13 @@ const defaultToken: string = 'BTC';
  * @returns  The decrypted result, as a lowercase hex-string
  */
 const decrypt = (key: string, ciphertext: string): string => {
-  return AES.decrypt(
-    lib.CipherParams.create({
-      ciphertext: enc.Hex.parse(ciphertext),
-    }),
-    enc.Hex.parse(key),
-    {
-      iv: enc.Hex.parse('00000000000000000000000000000000'),
-      mode: mode.CBC,
-      padding: pad.NoPadding,
-    },
-  )
-    .toString(enc.Hex)
-    .toLowerCase();
+  const decipher: Decipher = createDecipheriv(
+    'aes256',
+    Buffer.from(key, 'hex'),
+    Buffer.from('00000000000000000000000000000000', 'hex'),
+  ).setAutoPadding(false);
+  decipher.update(Buffer.from(ciphertext, 'hex'));
+  return decipher.final('hex').toLowerCase();
 };
 
 /**
@@ -155,12 +149,47 @@ const checkStatus = (card: Card): boolean => {
   return true;
 };
 
-const checkLimits = (card: Card, tokens: string[] = []): boolean => {
+const getLimits = async (card: Card, tokens: string[] = []): Promise<{ [_: string]: number }> => {
   if (0 === tokens.length) {
     tokens = [defaultToken];
   }
 
-  return false;
+  type Record = { token: string } & { remaining: number };
+  const records: Record[] = await prisma.$queryRaw<Record[]>`SELECT
+  p.token AS token,
+  MIN(p.remaining) AS remaining
+FROM
+  (
+    SELECT
+      l.token AS token,
+      l.amount - SUM(p.amount) AS remaining
+    FROM
+      limits AS l
+    JOIN
+      payments AS p ON (
+          p.token = l.token
+        AND
+          p.card_uuid = l.card_uuid
+        AND
+          NOW() - MAKE_INTERVAL(SECS => l.delta) <= p.created_at
+      )
+    WHERE
+      l.token IN (${Prisma.join(tokens)})
+    GROUP BY
+      l.uuid,
+      l.token
+  ) AS p
+GROUP BY
+  p.token
+HAVING
+  0 < MIN(p.remaining)`;
+
+  let result: { [_: string]: number } = {};
+  for (const { token, remaining } of records) {
+    result[token] = remaining;
+  }
+
+  return result;
 };
 
 /**
