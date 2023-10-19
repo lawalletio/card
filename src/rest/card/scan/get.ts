@@ -15,6 +15,7 @@ const prisma: PrismaClient = new PrismaClient();
 const federationId: string = requiredEnvVar(
   'LAWALLET_FEDERATION_ID',
 ).toLowerCase();
+const apiBaseUrl: string = requiredEnvVar('LAWALLET_API_BASE_URL');
 
 const laWalletHeader: string = 'X-LaWallet-Settings';
 const defaultToken: string = 'BTC';
@@ -149,12 +150,48 @@ const handler = async (req: ExtendedRequest, res: Response) => {
     return;
   }
 
+  // 4. build responses
+  let tokensResponse: {
+    [_: string]: { minWithdrawable: 0; maxWithdrawable: number };
+  } = {};
+  for (const tokenName in limits) {
+    tokensResponse[tokenName] = {
+      minWithdrawable: 0,
+      maxWithdrawable: limits[tokenName],
+    };
+  }
+
+  let response: object = {
+    callback: `${apiBaseUrl}/card/pay`,
+    defaultDescription: 'LaWallet',
+  };
+
   if (federation === federationId) {
     // send extended response
+    response = {
+      tag: 'extendedWithdrawRequest',
+      tokens: tokensResponse,
+      ...response,
+    };
   } else {
     // send standard response
+    response = {
+      tag: 'withdrawRequest',
+      ...tokensResponse[defaultToken],
+      ...response,
+    };
   }
-  res.status(200).json({ ok: true }).send();
+
+  response = {
+    k1: (
+      await prisma.paymentRequest.create({
+        data: { response: response, cardUuid: card.uuid },
+      })
+    ).uuid,
+    ...response,
+  };
+
+  res.status(200).json(response).send();
 };
 
 export default handler;
