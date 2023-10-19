@@ -152,7 +152,7 @@ const handler = async (req: ExtendedRequest, res: Response) => {
   if (federation === federationId) {
     // send extended response
   } else {
-    // send boltcard response
+    // send standard response
   }
   res.status(200).json({ ok: true }).send();
 };
