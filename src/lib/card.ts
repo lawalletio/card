@@ -21,14 +21,14 @@ const prisma: PrismaClient = new PrismaClient();
  * @param ciphertext  The ciphertext to decrypt with the server-side keys, as a hex-string
  * @returns  The decrypted result, as a lowercase hex-string
  */
-const decrypt = (key: string, ciphertext: string): string => {
+const decrypt = (key: string, ciphertext: string): Buffer => {
   const decipher: Decipher = createDecipheriv(
     'aes128',
     Buffer.from(key, 'hex'),
     Buffer.from('00000000000000000000000000000000', 'hex'),
   ).setAutoPadding(false);
   decipher.update(Buffer.from(ciphertext, 'hex'));
-  return decipher.final('hex').toLowerCase();
+  return decipher.final();
 };
 
 /**
@@ -69,7 +69,7 @@ export const retrieveNtag424FromPC = async (
     return null;
   }
 
-  const pBytes: Buffer = Buffer.from(decrypt(k1, p), 'hex');
+  const pBytes: Buffer = decrypt(k1, p);
   if (0xc7 !== pBytes[0]) {
     debug('Malformed p: does not start with 0xC7');
     return null;
