@@ -2,7 +2,7 @@ import { Debugger } from 'debug';
 import type { Response } from 'express';
 import type { ExtendedRequest } from '@type/request';
 
-import { logger, requiredEnvVar } from '@lib/utils';
+import { logger, requiredEnvVar, uuid2suuid } from '@lib/utils';
 import { retrieveCardFromPC } from '@lib/card';
 
 import { Card, Prisma, PrismaClient } from '@prisma/client';
@@ -202,11 +202,13 @@ const handler = async (req: ExtendedRequest, res: Response) => {
   res
     .status(200)
     .json({
-      k1: (
-        await prisma.paymentRequest.create({
-          data: { response: quasiResponse, cardUuid: card.uuid },
-        })
-      ).uuid,
+      k1: uuid2suuid(
+        (
+          await prisma.paymentRequest.create({
+            data: { response: quasiResponse, cardUuid: card.uuid },
+          })
+        ).uuid,
+      ),
       ...quasiResponse,
     })
     .send();
