@@ -115,7 +115,53 @@ HAVING
 };
 
 /**
+ * Build a pseudo-response (ie. a response lacking the "k1" field) for the given federation and limits
  *
+ * @param federation  The federation asking for a response
+ * @param limits  The limits remaining on this card
+ * @returns  The corresponding pseudo-response
+ */
+const buildQuasiResponse = (
+  federation: string | null,
+  limits: { [_: string]: number },
+): object => {
+  let tokensResponse: {
+    [_: string]: { minWithdrawable: 0; maxWithdrawable: number };
+  } = {};
+  for (const tokenName in limits) {
+    tokensResponse[tokenName] = {
+      minWithdrawable: 0,
+      maxWithdrawable: limits[tokenName],
+    };
+  }
+
+  let response: object = {
+    callback: `${apiBaseUrl}/card/pay`,
+    defaultDescription: 'LaWallet',
+  };
+
+  if (federation === federationId) {
+    // extended response
+    return {
+      tag: 'extendedWithdrawRequest',
+      tokens: tokensResponse,
+      ...response,
+    };
+  } else {
+    // standard response
+    return {
+      tag: 'withdrawRequest',
+      ...tokensResponse[defaultToken],
+      ...response,
+    };
+  }
+};
+
+/**
+ * Handle a "/scan" endpoint
+ *
+ * @param req  HTTP request to handle
+ * @param res  HTTP response to send
  */
 const handler = async (req: ExtendedRequest, res: Response) => {
   // 1. check query params
@@ -151,47 +197,19 @@ const handler = async (req: ExtendedRequest, res: Response) => {
   }
 
   // 4. build responses
-  let tokensResponse: {
-    [_: string]: { minWithdrawable: 0; maxWithdrawable: number };
-  } = {};
-  for (const tokenName in limits) {
-    tokensResponse[tokenName] = {
-      minWithdrawable: 0,
-      maxWithdrawable: limits[tokenName],
-    };
-  }
+  const quasiResponse: object = buildQuasiResponse(federation, limits);
 
-  let response: object = {
-    callback: `${apiBaseUrl}/card/pay`,
-    defaultDescription: 'LaWallet',
-  };
-
-  if (federation === federationId) {
-    // send extended response
-    response = {
-      tag: 'extendedWithdrawRequest',
-      tokens: tokensResponse,
-      ...response,
-    };
-  } else {
-    // send standard response
-    response = {
-      tag: 'withdrawRequest',
-      ...tokensResponse[defaultToken],
-      ...response,
-    };
-  }
-
-  response = {
-    k1: (
-      await prisma.paymentRequest.create({
-        data: { response: response, cardUuid: card.uuid },
-      })
-    ).uuid,
-    ...response,
-  };
-
-  res.status(200).json(response).send();
+  res
+    .status(200)
+    .json({
+      k1: (
+        await prisma.paymentRequest.create({
+          data: { response: quasiResponse, cardUuid: card.uuid },
+        })
+      ).uuid,
+      ...quasiResponse,
+    })
+    .send();
 };
 
 export default handler;
