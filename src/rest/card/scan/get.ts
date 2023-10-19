@@ -175,6 +175,8 @@ FROM
       )
     WHERE
       l.token IN (${Prisma.join(tokens)})
+    AND
+      l.card_uuid = ${card.uuid}
     GROUP BY
       l.uuid,
       l.token
