@@ -2,12 +2,10 @@ import { randomBytes } from 'crypto';
 import { Debugger } from 'debug';
 import type { Response } from 'express';
 import { NDKEvent, NostrEvent } from '@nostr-dev-kit/ndk';
-import { nip26, validateEvent, verifySignature } from 'nostr-tools';
 import { Ntag424, Prisma } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 import {
-  isEmpty,
   logger,
   nowInSeconds,
   requiredEnvVar,
@@ -16,9 +14,9 @@ import {
 } from '@lib/utils';
 import { getWriteNDK } from '@services/ndk';
 import type { ExtendedRequest } from '@type/request';
+import { parseEventBody } from '@lib/event';
 
 const log: Debugger = logger.extend('rest:card:post');
-const debug: Debugger = log.extend('debug');
 const error: Debugger = log.extend('error');
 const U_CONSTRAINT_VIOLATION = 'P2002';
 const DEPENDENCY_NOT_FOUND = 'P2025';
@@ -51,24 +49,6 @@ function cardInitRes(req: NostrEvent, ntag424: Ntag424): NostrEvent {
     ],
     content: JSON.stringify(ntag424),
   };
-}
-
-/**
- * Return false if there is an invalid delegation
- *
- * If there is a valid delegation, change the pubkey of the event to
- * the delegator.
- */
-function validateNip26(event: NostrEvent): boolean {
-  if (event.tags.some((t) => 'delegation' === t[0])) {
-    const delegator = nip26.getDelegator(event);
-    if (delegator) {
-      event.pubkey = delegator;
-    } else {
-      return false;
-    }
-  }
-  return true;
 }
 
 /**
@@ -119,20 +99,11 @@ function createNtag424({
  * Generate the keys and return the newly created card
  */
 const handler = async (req: ExtendedRequest, res: Response) => {
-  const reqEvent: NostrEvent = req.body;
-  if (isEmpty(reqEvent)) {
-    log('Received unparsable body %O', req.body);
-    res.status(415).send();
-    return;
-  }
-  debug('Received event: %O', reqEvent);
-
-  if (
-    !validateEvent(reqEvent) ||
-    !verifySignature(reqEvent) ||
-    !validateNip26(reqEvent) ||
-    reqEvent.pubkey !== requiredEnvVar('CARD_WRITER_PUBKEY')
-  ) {
+  const reqEvent = parseEventBody(
+    req.body,
+    requiredEnvVar('CARD_WRITER_PUBKEY'),
+  );
+  if (!reqEvent) {
     log('Received invalid nostr event %O', reqEvent);
     res.status(422).send();
     return;
