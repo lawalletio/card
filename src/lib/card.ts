@@ -34,12 +34,12 @@ const decrypt = (key: string, ciphertext: string): string => {
 /**
  * Calculate the SV2-like CMAC signature for the given card ID and tap-counter value, using the given key
  *
+ * @param k2  Key to use (viz. k2), to calculate the CMAC
  * @param cid  Card ID, as a byte-buffer
  * @param ctr  Card tap-counter, as a byte value
- * @param k2  Key to use (viz. k2), to calculate the CMAC
  * @returns   The calculated CMAC value, as a lowercase hex-string
  */
-const cmac = async (cid: Buffer, ctr: Buffer, k2: string): Promise<string> => {
+const cmac = async (k2: string, cid: Buffer, ctr: Buffer): Promise<string> => {
   return Buffer.from(
     await new AesCmac(Buffer.from(k2, 'hex')).calculate(
       Buffer.from([0x3c, 0xc3, 0x00, 0x01, 0x00, 0x80, ...cid, ...ctr]),
@@ -96,7 +96,7 @@ export const retrieveNtag424FromPC = async (
     return null;
   }
 
-  if (c.toLowerCase() !== (await cmac(cidBytes, ctrBytes, k2))) {
+  if (c.toLowerCase() !== (await cmac(k2, cidBytes, ctrBytes))) {
     debug('Malformed c: CMAC mismatch');
     return null;
   }
