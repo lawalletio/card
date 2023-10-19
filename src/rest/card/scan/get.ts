@@ -165,23 +165,16 @@ const buildQuasiResponse = (
  */
 const handler = async (req: ExtendedRequest, res: Response) => {
   // 1. check query params
-  const ntag424Cid: string | null =
-    (
-      await retrieveNtag424FromPC(
-        req.query.p as string | undefined,
-        req.query.c as string | undefined,
-      )
-    )?.cid ?? null;
-  if (null === ntag424Cid) {
-    res
-      .status(400)
-      .json({ status: 'ERROR', reason: 'Failed to retrieve card data' })
-      .send();
-    return;
-  }
-
   const card: Card | null = await prisma.card.findUnique({
-    where: { ntag424Cid: ntag424Cid },
+    where: {
+      ntag424Cid:
+        (
+          await retrieveNtag424FromPC(
+            req.query.p as string | undefined,
+            req.query.c as string | undefined,
+          )
+        )?.cid ?? '',
+    },
   });
   if (null === card) {
     res
