@@ -82,10 +82,10 @@ FROM
   (
     SELECT
       l.token AS token,
-      l.amount - SUM(p.amount) AS remaining
+      l.amount - COALESCE(SUM(p.amount), 0) AS remaining
     FROM
       limits AS l
-    JOIN
+    LEFT JOIN
       payments AS p ON (
           p.token = l.token
         AND
@@ -96,7 +96,7 @@ FROM
     WHERE
       l.token IN (${Prisma.join(tokens)})
     AND
-      l.card_uuid = ${card.uuid}
+      l.card_uuid = ${card.uuid}::uuid
     GROUP BY
       l.uuid,
       l.token
