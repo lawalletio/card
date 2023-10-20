@@ -131,9 +131,16 @@ export const generatePC = async (
   cid: string,
   ctr: number,
 ): Promise<{ p: string; c: string } | null> => {
-  if (32 !== k2.length || 14 !== cid.length || ctr < 0 || 0xffffff < ctr) {
+  if (!/^[a-f0-9]{32}$/gi.test(k2)) {
     return null;
   }
+  if (!/^[a-f0-9]{14}$/gi.test(cid)) {
+    return null;
+  }
+  if (ctr < 0 || 0xffffff < ctr) {
+    return null;
+  }
+
   const ctrBytes: Buffer = Buffer.from(
     ctr.toString(16).padStart(6, '0'),
     'hex',
@@ -144,6 +151,7 @@ export const generatePC = async (
     ctrBytes[1],
     ctrBytes[0],
   ]);
+
   const plaintextAes: Buffer = Buffer.from([
     0xc7,
     ...cidCtr,
