@@ -5,7 +5,13 @@ import { Debugger } from 'debug';
 import { logger, requiredEnvVar } from '@lib/utils';
 
 import { AesCmac } from 'aes-cmac';
-import { Cipher, Decipher, createCipheriv, createDecipheriv } from 'crypto';
+import {
+  Cipher,
+  Decipher,
+  createCipheriv,
+  createDecipheriv,
+  randomBytes,
+} from 'crypto';
 
 import { Ntag424, PrismaClient } from '@prisma/client';
 
@@ -135,7 +141,11 @@ export const generatePC = async (
     ctrBytes[1],
     ctrBytes[2],
   ]);
-  const plaintextAes: Buffer = Buffer.from([0xc7, ...cidCtr]);
+  const plaintextAes: Buffer = Buffer.from([
+    0xc7,
+    ...cidCtr,
+    ...randomBytes(5),
+  ]);
   const plaintextCmac: Buffer = Buffer.from([
     0x3c,
     0xc3,
