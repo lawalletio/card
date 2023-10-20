@@ -6,7 +6,7 @@ import { parseEventBody } from '@lib/event';
 import { logger, requiredEnvVar } from '@lib/utils';
 import type { ExtendedRequest } from '@type/request';
 
-const log: Debugger = logger.extend('rest:card:patch');
+const log: Debugger = logger.extend('rest:ntag424:patch');
 
 /**
  * Associate a one time code with a ntag424
