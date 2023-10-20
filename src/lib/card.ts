@@ -179,8 +179,8 @@ export const generatePC = async (
     zeroIv,
   );
   const aesCmac: Uint8Array = await new AesCmac(
-    Buffer.from(k2, 'hex'),
-  ).calculate(plaintextCmac);
+    await new AesCmac(Buffer.from(k2, 'hex')).calculate(plaintextCmac),
+  ).calculate(Buffer.alloc(0));
 
   return {
     p: cipher.update(plaintextAes).toString('hex').toUpperCase(),
