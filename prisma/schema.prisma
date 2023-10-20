@@ -135,7 +135,9 @@ model Design {
 }
 
 model Merchant {
-  pubKey String @map("pub_key")
+  pubKey      String @map("pub_key")
+  name        String @map("name")
+  description String @map("description")
 
   trustedMerchants TrustedMerchants[] @relation
 
