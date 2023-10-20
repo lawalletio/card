@@ -130,7 +130,6 @@ export const generatePC = async (
     'hex',
   );
   const cidCtr: Buffer = Buffer.from([
-    0xc7,
     ...Buffer.from(cid, 'hex'),
     ctrBytes[0],
     ctrBytes[1],
