@@ -15,7 +15,7 @@ import {
 
 import { Ntag424, PrismaClient } from '@prisma/client';
 
-const log: Debugger = logger.extend('rest:card:scan');
+const log: Debugger = logger.extend('lib:card:scan');
 const debug: Debugger = log.extend('debug');
 
 const k1: string = requiredEnvVar('SERVER_AES_KEY_HEX').toLowerCase();
