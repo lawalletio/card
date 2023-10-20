@@ -124,12 +124,14 @@ export const retrieveNtag424FromPC = async (
  * @param k2  Key to use (viz. k2) to calculate the CMAC, as a 32-character hex-string
  * @param cid  Card ID, as a 14-character hex-string
  * @param ctr  Card tap-counter, as a number
+ * @param pad  Optional 10-character hex-string padding to use for AES encryption
  * @returns
  */
 export const generatePC = async (
   k2: string,
   cid: string,
   ctr: number,
+  pad: string | null = null,
 ): Promise<{ p: string; c: string } | null> => {
   if (!/^[a-f0-9]{32}$/gi.test(k2)) {
     return null;
@@ -138,6 +140,11 @@ export const generatePC = async (
     return null;
   }
   if (ctr < 0 || 0xffffff < ctr) {
+    return null;
+  }
+  if (null === pad) {
+    pad = randomBytes(5).toString('hex');
+  } else if (!/^[a-f0-9]{10}$/gi.test(pad)) {
     return null;
   }
 
@@ -155,7 +162,7 @@ export const generatePC = async (
   const plaintextAes: Buffer = Buffer.from([
     0xc7,
     ...cidCtr,
-    ...randomBytes(5),
+    ...Buffer.from(pad, 'hex'),
   ]);
   const plaintextCmac: Buffer = Buffer.from([...sv2prefix, ...cidCtr]);
 
