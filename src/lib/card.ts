@@ -35,9 +35,8 @@ const decrypt = (key: string, ciphertext: string): Buffer => {
     'aes128',
     Buffer.from(key, 'hex'),
     zeroIv,
-  ).setAutoPadding(false);
-  decipher.update(Buffer.from(ciphertext, 'hex'));
-  return decipher.final();
+  );
+  return decipher.update(Buffer.from(ciphertext, 'hex'));
 };
 
 /**
