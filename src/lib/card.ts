@@ -49,11 +49,19 @@ const decrypt = (key: string, ciphertext: string): Buffer => {
  * @returns   The calculated CMAC value, as a lowercase hex-string
  */
 const cmac = async (k2: string, cid: Buffer, ctr: Buffer): Promise<string> => {
-  return Buffer.from(
-    await new AesCmac(Buffer.from(k2, 'hex')).calculate(
-      Buffer.from([...sv2prefix, ...cid, ...ctr]),
-    ),
-  )
+  const cmacBytes: Uint8Array = await new AesCmac(
+    Buffer.from(k2, 'hex'),
+  ).calculate(Buffer.from([...sv2prefix, ...cid, ...ctr]));
+  return Buffer.from([
+    cmacBytes[1],
+    cmacBytes[3],
+    cmacBytes[5],
+    cmacBytes[7],
+    cmacBytes[9],
+    cmacBytes[11],
+    cmacBytes[13],
+    cmacBytes[15],
+  ])
     .toString('hex')
     .toLowerCase();
 };
@@ -171,11 +179,22 @@ export const generatePC = async (
     Buffer.from(k1, 'hex'),
     zeroIv,
   );
-  const aesCmac: AesCmac = new AesCmac(Buffer.from(k2, 'hex'));
+  const aesCmac: Uint8Array = await new AesCmac(
+    Buffer.from(k2, 'hex'),
+  ).calculate(plaintextCmac);
 
   return {
     p: cipher.update(plaintextAes).toString('hex').toUpperCase(),
-    c: Buffer.from(await aesCmac.calculate(plaintextCmac))
+    c: Buffer.from([
+      aesCmac[1],
+      aesCmac[3],
+      aesCmac[5],
+      aesCmac[7],
+      aesCmac[9],
+      aesCmac[11],
+      aesCmac[13],
+      aesCmac[15],
+    ])
       .toString('hex')
       .toUpperCase(),
   };
