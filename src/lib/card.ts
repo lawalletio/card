@@ -20,6 +20,8 @@ const debug: Debugger = log.extend('debug');
 
 const k1: string = requiredEnvVar('SERVER_AES_KEY_HEX').toLowerCase();
 const zeroIv: Buffer = Buffer.alloc(16);
+const sv2prefix: Buffer = Buffer.from('3cc300010080', 'hex');
+
 const prisma: PrismaClient = new PrismaClient();
 
 /**
@@ -49,7 +51,7 @@ const decrypt = (key: string, ciphertext: string): Buffer => {
 const cmac = async (k2: string, cid: Buffer, ctr: Buffer): Promise<string> => {
   return Buffer.from(
     await new AesCmac(Buffer.from(k2, 'hex')).calculate(
-      Buffer.from([0x3c, 0xc3, 0x00, 0x01, 0x00, 0x80, ...cid, ...ctr]),
+      Buffer.from([...sv2prefix, ...cid, ...ctr]),
     ),
   )
     .toString('hex')
@@ -147,15 +149,7 @@ export const generatePC = async (
     ...cidCtr,
     ...randomBytes(5),
   ]);
-  const plaintextCmac: Buffer = Buffer.from([
-    0x3c,
-    0xc3,
-    0x00,
-    0x01,
-    0x00,
-    0x80,
-    ...cidCtr,
-  ]);
+  const plaintextCmac: Buffer = Buffer.from([...sv2prefix, ...cidCtr]);
 
   const cipher: Cipher = createCipheriv(
     'aes128',
