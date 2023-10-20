@@ -114,7 +114,7 @@ export const retrieveNtag424FromPC = async (
     return null;
   }
 
-  prisma.ntag424.update({
+  await prisma.ntag424.update({
     where: { cid: cid, k1: k1 },
     data: { ctr: ctrNew },
   });
