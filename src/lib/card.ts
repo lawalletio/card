@@ -41,14 +41,18 @@ const decrypt = (key: string, ciphertext: string): Buffer => {
 };
 
 /**
- * Calculate the SV2-like CMAC signature for the given card ID and tap-counter value, using the given key
+ * Calculate the SDMMAC signature for the given card ID and tap-counter value, using the given key
  *
- * @param k2  Key to use (viz. k2), to calculate the CMAC
+ * @param k2  Key to use (viz. k2), to calculate the SDMMAC
  * @param cid  Card ID, as a byte-buffer
  * @param ctr  Card tap-counter, as a byte value
- * @returns   The calculated CMAC value, as a lowercase hex-string
+ * @returns   The calculated SDMMAC value, as a lowercase hex-string
  */
-const cmac = async (k2: string, cid: Buffer, ctr: Buffer): Promise<string> => {
+const sdmmac = async (
+  k2: string,
+  cid: Buffer,
+  ctr: Buffer,
+): Promise<string> => {
   const cmacBytes: Uint8Array = await new AesCmac(
     await new AesCmac(Buffer.from(k2, 'hex')).calculate(
       Buffer.from([...sv2prefix, ...cid, ...ctr]),
@@ -71,8 +75,8 @@ const cmac = async (k2: string, cid: Buffer, ctr: Buffer): Promise<string> => {
 /**
  * Given the "p" and "c" arguments in the scan url, retrieve the associated Ntag424 entity and update the card tap-counter
  *
- * @param p  The scan url's "p" parameter (ie.  AES(k1     , ctr || cid))
- * @param c  The scan url's "c" parameter (ie. CMAC(k2[cid], ctr || cid))
+ * @param p  The scan url's "p" parameter (ie.    AES(k1     , ctr || cid))
+ * @param c  The scan url's "c" parameter (ie. SDMMAC(k2[cid], ctr || cid))
  * @returns  The retrieved Ntag424 entity or null if errors encountered
  */
 export const retrieveNtag424FromPC = async (
@@ -115,8 +119,8 @@ export const retrieveNtag424FromPC = async (
     return null;
   }
 
-  if (c.toLowerCase() !== (await cmac(k2, cidBytes, ctrBytes))) {
-    debug('Malformed c: CMAC mismatch');
+  if (c.toLowerCase() !== (await sdmmac(k2, cidBytes, ctrBytes))) {
+    debug('Malformed c: SDMMAC mismatch');
     return null;
   }
 
@@ -131,7 +135,7 @@ export const retrieveNtag424FromPC = async (
 /**
  * Generate "p" and "c" parameters for given values
  *
- * @param k2  Key to use (viz. k2) to calculate the CMAC, as a 32-character hex-string
+ * @param k2  Key to use (viz. k2) to calculate the SDMMAC, as a 32-character hex-string
  * @param cid  Card ID, as a 14-character hex-string
  * @param ctr  Card tap-counter, as a number
  * @param pad  Optional 10-character hex-string padding to use for AES encryption
