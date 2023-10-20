@@ -7,6 +7,12 @@ import { logger } from '@lib/utils';
 const log: Debugger = logger.extend('lib:event');
 const debug: Debugger = log.extend('debug');
 
+export enum Kind {
+  REGULAR = 1112,
+  EPHEMERAL = 21111,
+  PARAMETRIZED_REPLACEABLE = 31111,
+}
+
 /**
  * Return false if there is an invalid delegation
  *
