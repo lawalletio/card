@@ -121,9 +121,12 @@ export const generatePC = async (
   k2: string,
   cid: string,
   ctr: number,
-): Promise<{ p: string; c: string }> => {
+): Promise<{ p: string; c: string } | null> => {
+  if (32 !== k2.length || 14 !== cid.length || ctr < 0 || 0xffffff < ctr) {
+    return null;
+  }
   const ctrBytes: Buffer = Buffer.from(
-    ctr.toString(16).padStart(6, '0').substring(0, 6),
+    ctr.toString(16).padStart(6, '0'),
     'hex',
   );
   const cidCtr: Buffer = Buffer.from([
