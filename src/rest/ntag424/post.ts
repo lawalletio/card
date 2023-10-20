@@ -16,7 +16,7 @@ import { getWriteNDK } from '@services/ndk';
 import type { ExtendedRequest } from '@type/request';
 import { parseEventBody } from '@lib/event';
 
-const log: Debugger = logger.extend('rest:card:post');
+const log: Debugger = logger.extend('rest:ntag424:post');
 const error: Debugger = log.extend('error');
 const U_CONSTRAINT_VIOLATION = 'P2002';
 const DEPENDENCY_NOT_FOUND = 'P2025';
