@@ -5,13 +5,7 @@ import { Debugger } from 'debug';
 import { logger, requiredEnvVar } from '@lib/utils';
 
 import { AesCmac } from 'aes-cmac';
-import {
-  Cipher,
-  Decipher,
-  createCipheriv,
-  createDecipheriv,
-  randomBytes,
-} from 'crypto';
+import { Cipher, createCipheriv, createDecipheriv, randomBytes } from 'crypto';
 
 import { Ntag424, PrismaClient } from '@prisma/client';
 
@@ -31,12 +25,9 @@ const prisma: PrismaClient = new PrismaClient();
  * @returns  The decrypted result, as a lowercase hex-string
  */
 const decrypt = (key: string, ciphertext: string): Buffer => {
-  const decipher: Decipher = createDecipheriv(
-    'aes128',
-    Buffer.from(key, 'hex'),
-    zeroIv,
-  );
-  return decipher.update(Buffer.from(ciphertext, 'hex'));
+  return createDecipheriv('aes128', Buffer.from(key, 'hex'), zeroIv)
+    .setAutoPadding(false)
+    .update(Buffer.from(ciphertext, 'hex'));
 };
 
 /**
