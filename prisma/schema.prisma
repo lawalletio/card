@@ -15,7 +15,6 @@ model Card {
 
   holderPubKey String? @map("holder_pub_key")
   ntag424Cid   String  @map("ntag424_cid")
-  stateUuid    String  @map("state_uuid") @db.Uuid
 
   holder           Holder?          @relation(fields: [holderPubKey], references: [pubKey], onUpdate: NoAction, onDelete: NoAction)
   ntag424          Ntag424          @relation(fields: [ntag424Cid], references: [cid], onUpdate: NoAction, onDelete: NoAction)
