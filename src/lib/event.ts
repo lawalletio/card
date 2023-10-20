@@ -33,19 +33,24 @@ function validateNip26(event: NostrEvent): boolean {
 
 /**
  * Common validations for nostr events
+ *
+ * @param event to be validated
+ * @param expectedPubkey if present, validate that it is equal to event
+ *  author
+ * @return the event if valid, null otherwise
  */
 export function parseEventBody(
   event: NostrEvent,
-  expectedPubkey: string,
+  expectedPubkey?: string,
 ): NostrEvent | null {
-  debug('Received event: %O', event);
+  debug('Received event: %O, expectedPubkey: %O', event, expectedPubkey);
   if (
     !validateEvent(event) ||
     !verifySignature(event) ||
     !validateNip26(event) ||
-    event.pubkey !== expectedPubkey
+    (expectedPubkey && event.pubkey !== expectedPubkey)
   ) {
-    log('Received invalid nostr event %O', event);
+    log('Received invalid nostr event %s', event.id);
     return null;
   }
   return event;
