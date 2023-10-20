@@ -163,10 +163,8 @@ export const generatePC = async (
   ).setAutoPadding(false);
   const aesCmac: AesCmac = new AesCmac(Buffer.from(k2, 'hex'));
 
-  cipher.update(plaintextAes);
-
   return {
-    p: cipher.final('hex').toLowerCase(),
+    p: cipher.update(plaintextAes).toString('hex').toLowerCase(),
     c: Buffer.from(await aesCmac.calculate(plaintextCmac))
       .toString('hex')
       .toLowerCase(),
