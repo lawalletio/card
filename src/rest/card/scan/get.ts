@@ -3,7 +3,11 @@ import type { Response } from 'express';
 import type { ExtendedRequest } from '@type/request';
 
 import { logger, requiredEnvVar, uuid2suuid } from '@lib/utils';
-import { retrieveNtag424FromPC } from '@lib/card';
+import {
+  ScanQuasiResponse,
+  ScanResponse,
+  retrieveNtag424FromPC,
+} from '@lib/card';
 
 import { Card, Prisma, PrismaClient } from '@prisma/client';
 
@@ -124,7 +128,7 @@ HAVING
 const buildQuasiResponse = (
   federation: string | null,
   limits: { [_: string]: number },
-): object => {
+): ScanQuasiResponse => {
   let tokensResponse: {
     [_: string]: { minWithdrawable: 0; maxWithdrawable: number };
   } = {};
@@ -135,24 +139,21 @@ const buildQuasiResponse = (
     };
   }
 
-  let response: object = {
-    callback: `${apiBaseUrl}/card/pay`,
-    defaultDescription: 'LaWallet',
-  };
-
   if (federation === federationId) {
     // extended response
     return {
       tag: 'extendedWithdrawRequest',
+      callback: `${apiBaseUrl}/card/pay`,
+      defaultDescription: 'LaWallet',
       tokens: tokensResponse,
-      ...response,
     };
   } else {
     // standard response
     return {
       tag: 'withdrawRequest',
+      callback: `${apiBaseUrl}/card/pay`,
+      defaultDescription: 'LaWallet',
       ...tokensResponse[defaultToken],
-      ...response,
     };
   }
 };
@@ -204,21 +205,23 @@ const handler = async (req: ExtendedRequest, res: Response) => {
   }
 
   // 4. build responses
-  const quasiResponse: object = buildQuasiResponse(federation, limits);
-
-  res
-    .status(200)
-    .json({
-      k1: uuid2suuid(
+  const quasiResponse: ScanQuasiResponse = buildQuasiResponse(
+    federation,
+    limits,
+  );
+  const response: ScanResponse = {
+    k1:
+      uuid2suuid(
         (
           await prisma.paymentRequest.create({
             data: { response: quasiResponse, cardUuid: card.uuid },
           })
         ).uuid,
-      ),
-      ...quasiResponse,
-    })
-    .send();
+      ) ?? '',
+    ...quasiResponse,
+  };
+
+  res.status(200).json(response).send();
 };
 
 export default handler;

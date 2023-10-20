@@ -194,3 +194,29 @@ export const generatePC = async (
       .toUpperCase(),
   };
 };
+
+export type ScanQuasiResponseBasic = {
+  tag: string;
+  callback: string;
+  defaultDescription: string;
+  minWithdrawable: number;
+  maxWithdrawable: number;
+};
+export type ScanQuasiResponseExtended = {
+  tag: string;
+  callback: string;
+  defaultDescription: string;
+  tokens: {
+    [token: string]: {
+      minWithdrawable: number;
+      maxWithdrawable: number;
+    };
+  };
+};
+export type ScanQuasiResponse =
+  | ScanQuasiResponseBasic
+  | ScanQuasiResponseExtended;
+
+export type ScanResponseBasic = ScanQuasiResponseBasic & { k1: string };
+export type ScanResponseExtended = ScanQuasiResponseExtended & { k1: string };
+export type ScanResponse = ScanResponseBasic | ScanResponseExtended;
