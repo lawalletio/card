@@ -50,8 +50,10 @@ const decrypt = (key: string, ciphertext: string): Buffer => {
  */
 const cmac = async (k2: string, cid: Buffer, ctr: Buffer): Promise<string> => {
   const cmacBytes: Uint8Array = await new AesCmac(
-    Buffer.from(k2, 'hex'),
-  ).calculate(Buffer.from([...sv2prefix, ...cid, ...ctr]));
+    await new AesCmac(Buffer.from(k2, 'hex')).calculate(
+      Buffer.from([...sv2prefix, ...cid, ...ctr]),
+    ),
+  ).calculate(Buffer.alloc(0));
   return Buffer.from([
     cmacBytes[1],
     cmacBytes[3],
