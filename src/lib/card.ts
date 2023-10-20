@@ -19,6 +19,7 @@ const log: Debugger = logger.extend('lib:card:scan');
 const debug: Debugger = log.extend('debug');
 
 const k1: string = requiredEnvVar('SERVER_AES_KEY_HEX').toLowerCase();
+const zeroIv: Buffer = Buffer.alloc(16);
 const prisma: PrismaClient = new PrismaClient();
 
 /**
@@ -31,7 +32,7 @@ const decrypt = (key: string, ciphertext: string): Buffer => {
   const decipher: Decipher = createDecipheriv(
     'aes128',
     Buffer.from(key, 'hex'),
-    Buffer.from('00000000000000000000000000000000', 'hex'),
+    zeroIv,
   ).setAutoPadding(false);
   decipher.update(Buffer.from(ciphertext, 'hex'));
   return decipher.final();
@@ -159,7 +160,7 @@ export const generatePC = async (
   const cipher: Cipher = createCipheriv(
     'aes128',
     Buffer.from(k1, 'hex'),
-    Buffer.from('00000000000000000000000000000000', 'hex'),
+    zeroIv,
   );
   const aesCmac: AesCmac = new AesCmac(Buffer.from(k2, 'hex'));
 
