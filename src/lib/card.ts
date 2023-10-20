@@ -141,18 +141,17 @@ export const generatePC = async (
   ctr: number,
   pad: string | null = null,
 ): Promise<{ p: string; c: string } | null> => {
-  if (!/^[a-f0-9]{32}$/gi.test(k2)) {
-    return null;
-  }
-  if (!/^[a-f0-9]{14}$/gi.test(cid)) {
-    return null;
-  }
-  if (ctr < 0 || 0xffffff < ctr) {
-    return null;
-  }
   if (null === pad) {
     pad = randomBytes(5).toString('hex');
-  } else if (!/^[a-f0-9]{10}$/gi.test(pad)) {
+  }
+
+  if (
+    !/^[a-f0-9]{32}$/gi.test(k2) ||
+    !/^[a-f0-9]{14}$/gi.test(cid) ||
+    ctr < 0 ||
+    0xffffff < ctr ||
+    !/^[a-f0-9]{10}$/gi.test(pad)
+  ) {
     return null;
   }
 
