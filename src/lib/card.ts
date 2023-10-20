@@ -137,9 +137,9 @@ export const generatePC = async (
   );
   const cidCtr: Buffer = Buffer.from([
     ...Buffer.from(cid, 'hex'),
-    ctrBytes[0],
-    ctrBytes[1],
     ctrBytes[2],
+    ctrBytes[1],
+    ctrBytes[0],
   ]);
   const plaintextAes: Buffer = Buffer.from([
     0xc7,
