@@ -160,7 +160,7 @@ export const generatePC = async (
     'aes128',
     Buffer.from(k1, 'hex'),
     Buffer.from('00000000000000000000000000000000', 'hex'),
-  ).setAutoPadding(false);
+  );
   const aesCmac: AesCmac = new AesCmac(Buffer.from(k2, 'hex'));
 
   return {
