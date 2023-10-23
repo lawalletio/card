@@ -6,12 +6,11 @@ import { Kind } from '@lib/event';
 
 import { Delegation } from '@prisma/client';
 
-import { PaymentRequestObject, decode } from 'bolt11';
 import {
   PaymentRequestWithCard,
-  ScanResponseBasic,
+  ScanResponseExtended,
+  Tokens,
   addPaymentsForPaymentRequest,
-  defaultToken,
   getCardDelegation,
   getExtantPaymentRequestByUuid,
   getLimits,
@@ -20,56 +19,36 @@ import { NostrEvent } from '@nostr-dev-kit/ndk';
 
 const nostrPubKey: string = requiredEnvVar('NOSTR_PUBLIC_KEY');
 const ledgerPubKey: string = requiredEnvVar('LEDGER_PUBLIC_KEY');
-const btcGatewayPubKey: string = requiredEnvVar('BTC_GATEWAY_PUBLIC_KEY');
-
-const extractMsatsFromBolt11PR = (pr: string): number | null => {
-  const decodedPr: PaymentRequestObject = decode(pr);
-
-  let msats: number | null = null;
-  if (null !== decodedPr.millisatoshis) {
-    msats = parseInt(decodedPr.millisatoshis ?? '');
-  } else if (null !== decodedPr.satoshis) {
-    msats = 1000 * (decodedPr.satoshis ?? 0);
-  }
-
-  if (null === msats || (decodedPr.timeExpireDate ?? 0) < nowInSeconds()) {
-    return null;
-  }
-  return msats;
-};
 
 const generateTransactionEvent = async (
-  k1: string | undefined,
-  pr: string | undefined,
+  k1: string,
+  npub: string,
+  tokens: Tokens,
 ): Promise<NostrEvent | null> => {
-  if (typeof k1 !== 'string' || typeof pr !== 'string') {
-    return null;
-  }
-
-  let msats: number | null = extractMsatsFromBolt11PR(pr);
-  if (null === msats) {
-    return null;
-  }
-
   const paymentRequest: PaymentRequestWithCard | null =
     await getExtantPaymentRequestByUuid(suuid2uuid(k1) ?? '');
   if (null === paymentRequest) {
     return null;
   }
-  const paymentRequestResponse: ScanResponseBasic =
-    paymentRequest.response as ScanResponseBasic;
-  if (
-    'withdrawRequest' !== paymentRequestResponse.tag ||
-    paymentRequestResponse.maxWithdrawable < msats
-  ) {
+  const paymentRequestResponse: ScanResponseExtended =
+    paymentRequest.response as ScanResponseExtended;
+  if ('extendedWithdrawRequest' !== paymentRequestResponse.tag) {
     return null;
   }
+  const limits: { [_: string]: number } = await getLimits(
+    paymentRequest.card,
+    Object.keys(tokens),
+  );
 
-  const limits: { [_: string]: number } = await getLimits(paymentRequest.card, [
-    defaultToken,
-  ]);
-  if ((limits[defaultToken] ?? 0) < msats) {
-    return null;
+  for (const token in tokens) {
+    if (
+      !(token in paymentRequestResponse.tokens) ||
+      !(token in limits) ||
+      paymentRequestResponse.tokens[token].maxWithdrawable < tokens[token] ||
+      limits[token] < tokens[token]
+    ) {
+      return null;
+    }
   }
 
   const delegation: Delegation | null = await getCardDelegation(
@@ -79,14 +58,14 @@ const generateTransactionEvent = async (
     return null;
   }
 
-  addPaymentsForPaymentRequest(paymentRequest, { [defaultToken]: msats });
+  addPaymentsForPaymentRequest(paymentRequest, tokens);
 
   return {
     created_at: nowInSeconds(),
-    content: JSON.stringify({ tokens: { BTC: msats } }),
+    content: JSON.stringify({ tokens: tokens }),
     tags: [
       ['p', ledgerPubKey],
-      ['p', btcGatewayPubKey],
+      ['p', npub],
       ['t', 'internal-transaction-start'],
       [
         'delegation',
@@ -94,20 +73,49 @@ const generateTransactionEvent = async (
         delegation.conditions,
         delegation.delegationToken,
       ],
-      ['bolt11', pr],
     ],
     kind: Kind.REGULAR,
     pubkey: nostrPubKey,
   };
 };
 
+const validateBody = (
+  body: string,
+): { k1: string; npub: string; tokens: Tokens } | null => {
+  const json: object | null = JSON.parse(body);
+  if (
+    null === json ||
+    !('k1' in json && 'npub' in json && 'tokens' in json) ||
+    typeof json.tokens !== 'object'
+  ) {
+    return null;
+  }
+  for (const key in json.tokens) {
+    if (typeof key !== 'string') {
+      return null;
+    }
+    if (typeof json.tokens[key as keyof typeof json.tokens] !== 'number') {
+      return null;
+    }
+  }
+  return json as { k1: string; npub: string; tokens: Tokens };
+};
+
 const handler = async (req: ExtendedRequest, res: Response) => {
-  const k1: string | undefined = req.query.k1 as string | undefined;
-  const pr: string | undefined = req.query.pr as string | undefined;
+  const body: { k1: string; npub: string; tokens: Tokens } | null =
+    validateBody(req.body);
+  if (null === body) {
+    res
+      .status(400)
+      .json({ status: 'ERROR', reason: 'Invalid transaction' })
+      .send();
+    return;
+  }
 
   const transactionEvent: NostrEvent | null = await generateTransactionEvent(
-    k1,
-    pr,
+    body.k1,
+    body.npub,
+    body.tokens,
   );
   if (null === transactionEvent) {
     res

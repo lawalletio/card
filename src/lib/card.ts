@@ -7,7 +7,14 @@ import { logger, requiredEnvVar } from '@lib/utils';
 import { AesCmac } from 'aes-cmac';
 import { Cipher, createCipheriv, createDecipheriv, randomBytes } from 'crypto';
 
-import { Ntag424, PrismaClient } from '@prisma/client';
+import {
+  Card,
+  Delegation,
+  Ntag424,
+  PaymentRequest,
+  Prisma,
+  PrismaClient,
+} from '@prisma/client';
 
 const log: Debugger = logger.extend('lib:card:scan');
 const debug: Debugger = log.extend('debug');
@@ -220,3 +227,125 @@ export type ScanQuasiResponse =
 export type ScanResponseBasic = ScanQuasiResponseBasic & { k1: string };
 export type ScanResponseExtended = ScanQuasiResponseExtended & { k1: string };
 export type ScanResponse = ScanResponseBasic | ScanResponseExtended;
+
+export const defaultToken: string = 'BTC';
+
+const paymentRequestExpiryInSeconds: number = parseInt(
+  requiredEnvVar('PAYMENT_REQUEST_EXPIRY_IN_SECONDS'),
+);
+
+export type PaymentRequestWithCard = Prisma.PaymentRequestGetPayload<{
+  include: { card: true };
+}>;
+
+export const getExtantPaymentRequestByUuid = async (
+  uuid: string,
+): Promise<PaymentRequestWithCard | null> => {
+  return prisma.paymentRequest.findUnique({
+    where: {
+      uuid: uuid,
+      createdAt: {
+        gt: new Date(Date.now() - paymentRequestExpiryInSeconds * 1000),
+      },
+      payments: { none: {} },
+    },
+    include: {
+      card: true,
+    },
+  });
+};
+
+export const getCardDelegation = async (
+  cardUuid: string,
+): Promise<Delegation | null> => {
+  const card: Card | null = await prisma.card.findUnique({
+    where: {
+      uuid: cardUuid,
+    },
+  });
+  if (null === card || null === card.holderPubKey) {
+    return null;
+  }
+
+  return prisma.delegation.findFirst({
+    where: {
+      delegatorPubKey: card.holderPubKey,
+      since: { lte: new Date() },
+      until: { gte: new Date() },
+    },
+  });
+};
+
+/**
+ * Retrieve the limits available for the given tokens
+ *
+ * @param card  The card to retrieve tokens for
+ * @param tokens  The tokens to retrieve
+ * @returns  A dictionary mapping tokens to their remaining permissible amounts
+ */
+export const getLimits = async (
+  card: Card,
+  tokens: string[] = [],
+): Promise<{ [_: string]: number }> => {
+  if (0 === tokens.length) {
+    tokens = [defaultToken];
+  }
+
+  type Record = { token: string } & { remaining: number };
+  const records: Record[] = await prisma.$queryRaw<Record[]>`SELECT
+  p.token AS token,
+  MIN(p.remaining) AS remaining
+FROM
+  (
+    SELECT
+      l.token AS token,
+      l.amount - COALESCE(SUM(p.amount), 0) AS remaining
+    FROM
+      limits AS l
+    LEFT JOIN
+      payments AS p ON (
+          p.token = l.token
+        AND
+          p.card_uuid = l.card_uuid
+        AND
+          NOW() - MAKE_INTERVAL(SECS => l.delta) <= p.created_at
+      )
+    WHERE
+      l.token IN (${Prisma.join(tokens)})
+    AND
+      l.card_uuid = ${card.uuid}::uuid
+    GROUP BY
+      l.uuid,
+      l.token
+  ) AS p
+GROUP BY
+  p.token
+HAVING
+  0 < MIN(p.remaining)`;
+
+  let result: { [_: string]: number } = {};
+  for (const { token, remaining } of records) {
+    result[token] = remaining;
+  }
+
+  return result;
+};
+
+export type Tokens = { [_: string]: number };
+
+export const addPaymentsForPaymentRequest = (
+  paymentRequest: PaymentRequest,
+  tokens: Tokens,
+) => {
+  prisma.payment.createMany({
+    data: Object.entries(tokens).map((x: [string, number]) => {
+      return {
+        status: 'Paid',
+        token: x[0],
+        amount: BigInt(x[1]),
+        cardUuid: paymentRequest.cardUuid,
+        paymentRequestUuid: paymentRequest.uuid,
+      };
+    }),
+  });
+};

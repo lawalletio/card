@@ -6,10 +6,12 @@ import { logger, requiredEnvVar, uuid2suuid } from '@lib/utils';
 import {
   ScanQuasiResponse,
   ScanResponse,
+  defaultToken,
+  getLimits,
   retrieveNtag424FromPC,
 } from '@lib/card';
 
-import { Card, Prisma, PrismaClient } from '@prisma/client';
+import { Card, PrismaClient } from '@prisma/client';
 
 const log: Debugger = logger.extend('rest:card:scan');
 const debug: Debugger = log.extend('debug');
@@ -22,7 +24,6 @@ const federationId: string = requiredEnvVar(
 const apiBaseUrl: string = requiredEnvVar('LAWALLET_API_BASE_URL');
 
 const laWalletHeader: string = 'X-LaWallet-Settings';
-const defaultToken: string = 'BTC';
 
 /**
  * Check if the given card is enabled and has a valid card holder.
@@ -61,61 +62,6 @@ const parseFederationHeader = (
     ? m?.groups?.tokens?.split(':')
     : null) ?? [defaultToken];
   return { federation: federation, tokens: tokens };
-};
-
-/**
- * Retrieve the limits available for the given tokens
- *
- * @param card  The card to retrieve tokens for
- * @param tokens  The tokens to retrieve
- * @returns  A dictionary mapping tokens to their remaining permissible amounts
- */
-const getLimits = async (
-  card: Card,
-  tokens: string[] = [],
-): Promise<{ [_: string]: number }> => {
-  if (0 === tokens.length) {
-    tokens = [defaultToken];
-  }
-
-  type Record = { token: string } & { remaining: number };
-  const records: Record[] = await prisma.$queryRaw<Record[]>`SELECT
-  p.token AS token,
-  MIN(p.remaining) AS remaining
-FROM
-  (
-    SELECT
-      l.token AS token,
-      l.amount - COALESCE(SUM(p.amount), 0) AS remaining
-    FROM
-      limits AS l
-    LEFT JOIN
-      payments AS p ON (
-          p.token = l.token
-        AND
-          p.card_uuid = l.card_uuid
-        AND
-          NOW() - MAKE_INTERVAL(SECS => l.delta) <= p.created_at
-      )
-    WHERE
-      l.token IN (${Prisma.join(tokens)})
-    AND
-      l.card_uuid = ${card.uuid}::uuid
-    GROUP BY
-      l.uuid,
-      l.token
-  ) AS p
-GROUP BY
-  p.token
-HAVING
-  0 < MIN(p.remaining)`;
-
-  let result: { [_: string]: number } = {};
-  for (const { token, remaining } of records) {
-    result[token] = remaining;
-  }
-
-  return result;
 };
 
 /**
