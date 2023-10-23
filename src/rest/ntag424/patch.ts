@@ -11,6 +11,11 @@ const log: Debugger = logger.extend('rest:ntag424:patch');
 /**
  * Associate a one time code with a ntag424
  *
+ * Expected event content:
+ *  {
+ *    "otc": <one-time-code>
+ *  }
+ *
  * @param req  HTTP request to handle
  * @param res  HTTP response to send
  */

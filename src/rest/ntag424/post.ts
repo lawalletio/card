@@ -97,6 +97,17 @@ function createNtag424({
  * Initialize a new ntag424 on the database
  *
  * Generate the keys and return the newly created card
+ *
+ * Expected event content:
+ *  {
+ *    "cid": <card_id>,
+ *    "ctr": <card_last_counter>,
+ *    "design":
+ *      {
+ *        "name"?: <design_name>,
+ *        "uuid"?: <design_uuid>
+ *      }
+ *  }
  */
 const handler = async (req: ExtendedRequest, res: Response) => {
   const reqEvent = parseEventBody(
