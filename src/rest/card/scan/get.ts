@@ -11,12 +11,10 @@ import {
   retrieveNtag424FromPC,
 } from '@lib/card';
 
-import { Card, PrismaClient } from '@prisma/client';
+import { Card } from '@prisma/client';
 
 const log: Debugger = logger.extend('rest:card:scan');
 const debug: Debugger = log.extend('debug');
-
-const prisma: PrismaClient = new PrismaClient();
 
 const federationId: string = requiredEnvVar(
   'LAWALLET_FEDERATION_ID',
@@ -112,7 +110,7 @@ const buildQuasiResponse = (
  */
 const handler = async (req: ExtendedRequest, res: Response) => {
   // 1. check query params
-  const card: Card | null = await prisma.card.findUnique({
+  const card: Card | null = await req.context.prisma.card.findUnique({
     where: {
       ntag424Cid:
         (
@@ -159,7 +157,7 @@ const handler = async (req: ExtendedRequest, res: Response) => {
     k1:
       uuid2suuid(
         (
-          await prisma.paymentRequest.create({
+          await req.context.prisma.paymentRequest.create({
             data: { response: quasiResponse, cardUuid: card.uuid },
           })
         ).uuid,
