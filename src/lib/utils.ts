@@ -196,7 +196,7 @@ export const isEmpty = (obj: object): boolean => {
 };
 
 const sAlpha: string =
-  'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_';
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
 const sAlphaLength: bigint = BigInt(sAlpha.length);
 
 export const uuid2suuid = (uuid: string): string | null => {
