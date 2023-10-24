@@ -66,7 +66,15 @@ function validateDelegationConditions(
     }
   }
 
-  if (null === kind || null === since || null === until || isNaN(kind) || isNaN(since) || isNaN(until) || until <= since) {
+  if (
+    null === kind ||
+    null === since ||
+    null === until ||
+    isNaN(kind) ||
+    isNaN(since) ||
+    isNaN(until) ||
+    until <= since
+  ) {
     return null;
   }
 
