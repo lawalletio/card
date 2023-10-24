@@ -45,8 +45,12 @@ const generateTransactionEvent = async (
     return null;
   }
 
+  const paymentUuid: string | null = suuid2uuid(k1);
+  if (null === paymentUuid) {
+    return null;
+  }
   const paymentRequest: PaymentRequestWithCard | null =
-    await getExtantPaymentRequestByUuid(suuid2uuid(k1) ?? '');
+    await getExtantPaymentRequestByUuid(paymentUuid);
   if (null === paymentRequest) {
     return null;
   }
