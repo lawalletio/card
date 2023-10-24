@@ -61,18 +61,21 @@ export function parseEventBody(
  */
 export function responseEvent(
   resType: string,
-  req: NostrEvent,
   content: string,
+  req?: NostrEvent,
 ): NostrEvent {
+  let tags = [['t', resType]];
+  if (req) {
+    tags = tags.concat([
+      ['p', req.pubkey],
+      ['e', requiredProp(req, 'id')],
+    ]);
+  }
   return {
     pubkey: requiredEnvVar('NOSTR_PUBLIC_KEY'),
     created_at: nowInSeconds(),
     kind: 21111,
-    tags: [
-      ['p', req.pubkey],
-      ['e', requiredProp(req, 'id')],
-      ['t', resType],
-    ],
+    tags,
     content,
   };
 }

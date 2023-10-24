@@ -129,7 +129,7 @@ const handler = async (req: ExtendedRequest, res: Response) => {
   }
   const resEvent = new NDKEvent(
     getWriteNDK(),
-    responseEvent('card-init-response', reqEvent, JSON.stringify(ntag424)),
+    responseEvent('card-init-response', JSON.stringify(ntag424), reqEvent),
   );
   await resEvent.sign();
   res

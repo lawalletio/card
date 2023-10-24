@@ -280,10 +280,10 @@ const handler = async (req: ExtendedRequest, res: Response) => {
         getWriteNDK(),
         responseEvent(
           'card-activate-response',
-          reqEvent,
           JSON.stringify(card, (_, v) =>
             typeof v === 'bigint' ? v.toString() : v,
           ),
+          reqEvent,
         ),
       );
       res
