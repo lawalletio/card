@@ -27,7 +27,7 @@ const extractMsatsFromBolt11PR = (pr: string): number | null => {
 
   let msats: number | null = null;
   if (null !== decodedPr.millisatoshis) {
-    msats = parseInt(decodedPr.millisatoshis ?? '');
+    msats = parseInt(decodedPr.millisatoshis ?? '', 10);
   } else if (null !== decodedPr.satoshis) {
     msats = 1000 * (decodedPr.satoshis ?? 0);
   }

@@ -232,6 +232,7 @@ export const defaultToken: string = 'BTC';
 
 const paymentRequestExpiryInSeconds: number = parseInt(
   requiredEnvVar('PAYMENT_REQUEST_EXPIRY_IN_SECONDS'),
+  10,
 );
 
 export type PaymentRequestWithCard = Prisma.PaymentRequestGetPayload<{
