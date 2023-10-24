@@ -111,7 +111,7 @@ export const retrieveNtag424FromPC = async (
   const ctrOld: number = ntag424.ctr;
   const k2: string = ntag424.k2;
 
-  if (ctrNew < ctrOld) {
+  if (ctrNew <= ctrOld) {
     debug('Malformed p: counter too old');
     return null;
   }
