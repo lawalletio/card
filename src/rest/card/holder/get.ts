@@ -28,14 +28,14 @@ const handler = async (req: ExtendedRequest, res: Response) => {
       where: { ntag424Cid: ntag424.cid },
       include: { holder: true },
     });
-  if (null === card) {
+  if (null === card || null === card.holder) {
     res.status(404).send();
     return;
   }
 
   const resEvent: NDKEvent = new NDKEvent(
     getWriteNDK(),
-    responseEvent('card-holder-response', JSON.stringify(card.holder)),
+    responseEvent('card-holder-response', JSON.stringify(card.holder.pubKey)),
   );
 
   res
