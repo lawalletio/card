@@ -211,11 +211,11 @@ export const uuid2suuid = (uuid: string): string | null => {
   do {
     [suuid, n] = [sAlpha[Number(n % sAlphaLength)] + suuid, n / sAlphaLength];
   } while (n);
-  return suuid;
+  return suuid.padStart(22, sAlpha[0]);
 };
 
 export const suuid2uuid = (suuid: string): string | null => {
-  if (!suuid.match(/^[a-z0-9_-]*$/gi)) {
+  if (!suuid.match(/^[a-z0-9_-]{22}$/gi)) {
     return null;
   }
 
