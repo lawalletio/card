@@ -79,31 +79,35 @@ const generateTransactionEvent = async (
   };
 };
 
+type PayBody = {
+  k1: string;
+  npub: string;
+  tokens: Tokens;
+};
+
 const validateBody = (
-  body: string,
+  body: PayBody,
 ): { k1: string; npub: string; tokens: Tokens } | null => {
-  const json: object | null = JSON.parse(body);
   if (
-    null === json ||
-    !('k1' in json && 'npub' in json && 'tokens' in json) ||
-    typeof json.tokens !== 'object'
+    null === body ||
+    !('k1' in body && 'npub' in body && 'tokens' in body) ||
+    typeof body.tokens !== 'object'
   ) {
     return null;
   }
-  for (const key in json.tokens) {
+  for (const key in body.tokens) {
     if (typeof key !== 'string') {
       return null;
     }
-    if (typeof json.tokens[key as keyof typeof json.tokens] !== 'number') {
+    if (typeof body.tokens[key as keyof typeof body.tokens] !== 'number') {
       return null;
     }
   }
-  return json as { k1: string; npub: string; tokens: Tokens };
+  return body as { k1: string; npub: string; tokens: Tokens };
 };
 
 const handler = async (req: ExtendedRequest, res: Response) => {
-  const body: { k1: string; npub: string; tokens: Tokens } | null =
-    validateBody(req.body);
+  const body: PayBody | null = validateBody(req.body);
   if (null === body) {
     res
       .status(400)
