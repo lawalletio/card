@@ -16,6 +16,8 @@ import {
   getLimits,
 } from '@lib/card';
 import { NostrEvent } from '@nostr-dev-kit/ndk';
+import { nip19 } from 'nostr-tools';
+import { DecodeResult } from 'nostr-tools/lib/types/nip19';
 
 const nostrPubKey: string = requiredEnvVar('NOSTR_PUBLIC_KEY');
 const ledgerPubKey: string = requiredEnvVar('LEDGER_PUBLIC_KEY');
@@ -25,6 +27,11 @@ const generateTransactionEvent = async (
   npub: string,
   tokens: Tokens,
 ): Promise<NostrEvent | null> => {
+  const recipientPubkey: DecodeResult = nip19.decode(npub);
+  if ('npub' !== recipientPubkey.type) {
+    return null;
+  }
+
   const paymentRequest: PaymentRequestWithCard | null =
     await getExtantPaymentRequestByUuid(suuid2uuid(k1) ?? '');
   if (null === paymentRequest) {
@@ -65,7 +72,7 @@ const generateTransactionEvent = async (
     content: JSON.stringify({ tokens: tokens }),
     tags: [
       ['p', ledgerPubKey],
-      ['p', npub],
+      ['p', recipientPubkey.data],
       ['t', 'internal-transaction-start'],
       [
         'delegation',
