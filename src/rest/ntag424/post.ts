@@ -1,20 +1,14 @@
 import { randomBytes } from 'crypto';
 import { Debugger } from 'debug';
 import type { Response } from 'express';
-import { NDKEvent, NostrEvent } from '@nostr-dev-kit/ndk';
+import { NDKEvent } from '@nostr-dev-kit/ndk';
 import { Ntag424, Prisma } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
-import {
-  logger,
-  nowInSeconds,
-  requiredEnvVar,
-  requiredProp,
-  uuidRegex,
-} from '@lib/utils';
+import { logger, requiredEnvVar, uuidRegex } from '@lib/utils';
 import { getWriteNDK } from '@services/ndk';
 import type { ExtendedRequest } from '@type/request';
-import { parseEventBody } from '@lib/event';
+import { parseEventBody, responseEvent } from '@lib/event';
 
 const log: Debugger = logger.extend('rest:ntag424:post');
 const error: Debugger = log.extend('error');
@@ -32,23 +26,6 @@ type CardInitRequest = {
  */
 function randomHex(size: number): string {
   return randomBytes(size).toString('hex');
-}
-
-/**
- * Create a nostr event with ntag424 information
- */
-function cardInitRes(req: NostrEvent, ntag424: Ntag424): NostrEvent {
-  return {
-    pubkey: requiredEnvVar('NOSTR_PUBLIC_KEY'),
-    created_at: nowInSeconds(),
-    kind: 21111,
-    tags: [
-      ['p', req.pubkey],
-      ['e', requiredProp(req, 'id')],
-      ['t', 'card-init-response'],
-    ],
-    content: JSON.stringify(ntag424),
-  };
 }
 
 /**
@@ -150,7 +127,10 @@ const handler = async (req: ExtendedRequest, res: Response) => {
     res.status(500).send();
     return;
   }
-  const resEvent = new NDKEvent(getWriteNDK(), cardInitRes(reqEvent, ntag424));
+  const resEvent = new NDKEvent(
+    getWriteNDK(),
+    responseEvent('card-init-response', reqEvent, JSON.stringify(ntag424)),
+  );
   await resEvent.sign();
   res
     .status(201)

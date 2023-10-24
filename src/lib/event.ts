@@ -2,7 +2,7 @@ import { NostrEvent } from '@nostr-dev-kit/ndk';
 import { Debugger } from 'debug';
 import { nip26, validateEvent, verifySignature } from 'nostr-tools';
 
-import { logger } from '@lib/utils';
+import { logger, nowInSeconds, requiredEnvVar, requiredProp } from '@lib/utils';
 
 const log: Debugger = logger.extend('lib:event');
 const debug: Debugger = log.extend('debug');
@@ -54,4 +54,25 @@ export function parseEventBody(
     return null;
   }
   return event;
+}
+
+/**
+ * Return a response event for a request
+ */
+export function responseEvent(
+  resType: string,
+  req: NostrEvent,
+  content: string,
+): NostrEvent {
+  return {
+    pubkey: requiredEnvVar('NOSTR_PUBLIC_KEY'),
+    created_at: nowInSeconds(),
+    kind: 21111,
+    tags: [
+      ['p', req.pubkey],
+      ['e', requiredProp(req, 'id')],
+      ['t', resType],
+    ],
+    content,
+  };
 }

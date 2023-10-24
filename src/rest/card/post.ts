@@ -1,11 +1,11 @@
 import { Debugger } from 'debug';
 import type { Response } from 'express';
 
-import { parseEventBody } from '@lib/event';
-import { logger, nowInSeconds, requiredEnvVar, requiredProp } from '@lib/utils';
+import { parseEventBody, responseEvent } from '@lib/event';
+import { logger, requiredEnvVar } from '@lib/utils';
 import type { ExtendedRequest } from '@type/request';
-import { Card, Holder, Prisma, PrismaClient } from '@prisma/client';
-import { NDKEvent, NostrEvent } from '@nostr-dev-kit/ndk';
+import { Holder, Prisma, PrismaClient } from '@prisma/client';
+import { NDKEvent } from '@nostr-dev-kit/ndk';
 import { getWriteNDK } from '@services/ndk';
 
 const log: Debugger = logger.extend('rest:card:post');
@@ -181,27 +181,6 @@ function findOrCreateHolder(
 }
 
 /**
- * Return the signed response event for card activation
- *
- * The content of the event is a stringified Card record.
- */
-function cardActivateRes(req: NostrEvent, card: Card): NostrEvent {
-  return {
-    pubkey: requiredEnvVar('NOSTR_PUBLIC_KEY'),
-    created_at: nowInSeconds(),
-    kind: 21111,
-    tags: [
-      ['p', req.pubkey],
-      ['e', requiredProp(req, 'id')],
-      ['t', 'card-activate-response'],
-    ],
-    content: JSON.stringify(card, (_, v) =>
-      typeof v === 'bigint' ? v.toString() : v,
-    ),
-  };
-}
-
-/**
  * Parse and validate request content
  *
  * @return the parsed card activate request
@@ -299,7 +278,13 @@ const handler = async (req: ExtendedRequest, res: Response) => {
     .then(async (card) => {
       const resEvent = new NDKEvent(
         getWriteNDK(),
-        cardActivateRes(reqEvent, card),
+        responseEvent(
+          'card-activate-response',
+          reqEvent,
+          JSON.stringify(card, (_, v) =>
+            typeof v === 'bigint' ? v.toString() : v,
+          ),
+        ),
       );
       res
         .status(201)
