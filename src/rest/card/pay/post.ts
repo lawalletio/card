@@ -17,7 +17,6 @@ import {
 } from '@lib/card';
 import { NostrEvent } from '@nostr-dev-kit/ndk';
 import { nip19 } from 'nostr-tools';
-import { DecodeResult } from 'nostr-tools/lib/types/nip19';
 
 const nostrPubKey: string = requiredEnvVar('NOSTR_PUBLIC_KEY');
 const ledgerPubKey: string = requiredEnvVar('LEDGER_PUBLIC_KEY');
