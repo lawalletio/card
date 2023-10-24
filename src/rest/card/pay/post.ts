@@ -22,13 +22,26 @@ import { DecodeResult } from 'nostr-tools/lib/types/nip19';
 const nostrPubKey: string = requiredEnvVar('NOSTR_PUBLIC_KEY');
 const ledgerPubKey: string = requiredEnvVar('LEDGER_PUBLIC_KEY');
 
+
+const validatePubkey = (pubkey: string): string | null => {
+  const hex64regex: RegExp = /^[0-9a-f]{64}$/gi;
+  const bech32regex: RegExp = /^npub1[023456789acdefghjklmnpqrstuvwxyz]{58}$/gi;
+
+  if (hex64regex.test(pubkey)) {
+    return pubkey;
+  } else if (bech32regex.test(pubkey)) {
+    return nip19.decode<'npub'>(pubkey as `npub1${string}`).data;
+  }
+  return null;
+};
+
 const generateTransactionEvent = async (
   k1: string,
   npub: string,
   tokens: Tokens,
 ): Promise<NostrEvent | null> => {
-  const recipientPubkey: DecodeResult = nip19.decode(npub);
-  if ('npub' !== recipientPubkey.type) {
+  const recipientPubkey: string | null = validatePubkey(npub);
+  if (null === recipientPubkey) {
     return null;
   }
 
@@ -72,7 +85,7 @@ const generateTransactionEvent = async (
     content: JSON.stringify({ tokens: tokens }),
     tags: [
       ['p', ledgerPubKey],
-      ['p', recipientPubkey.data],
+      ['p', recipientPubkey],
       ['t', 'internal-transaction-start'],
       [
         'delegation',
