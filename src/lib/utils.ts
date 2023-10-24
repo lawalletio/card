@@ -15,9 +15,6 @@ const warn: debug.Debugger = logger.extend('lib:utils:warn');
 export class EmptyRoutesError extends Error {}
 export class DuplicateRoutesError extends Error {}
 
-export const uuidRegex =
-  /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/gi;
-
 const methods: RouteMethod[] = ['get', 'post', 'put', 'patch', 'delete'];
 const filesWithExtensionsWithoutExtensions = (
   path: string,
@@ -199,6 +196,9 @@ const sAlpha: string =
   'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
 const sAlphaLength: bigint = BigInt(sAlpha.length);
 
+export const uuidRegex: RegExp =
+  /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/gi;
+
 export const uuid2suuid = (uuid: string): string | null => {
   if (!uuid.match(uuidRegex)) {
     return null;
@@ -215,7 +215,7 @@ export const uuid2suuid = (uuid: string): string | null => {
 };
 
 export const suuid2uuid = (suuid: string): string | null => {
-  if (!suuid.match(/^[a-z0-9_-]{22}$/gi)) {
+  if (!suuid.match(/./g)?.every((c: string) => { return sAlpha.includes(c); })) {
     return null;
   }
 
@@ -223,7 +223,7 @@ export const suuid2uuid = (suuid: string): string | null => {
     .map((char: string) => BigInt(sAlpha.indexOf(char)))
     .reduce((acc: bigint, curr: bigint) => acc * sAlphaLength + curr, 0n);
   if (0xffffffffffffffffffffffffffffffffn < n) {
-    throw new Error('Out of range');
+    return null;
   }
   let uuid: string = n.toString(16).padStart(32, '0');
 
