@@ -152,8 +152,14 @@ const handler = async (req: ExtendedRequest, res: Response) => {
     return;
   }
 
-  req.context.outbox.publish(transactionEvent);
-  res.status(200).json({ status: 'OK' }).send();
+  req.context.outbox.publish(transactionEvent).then(() => {
+    res.status(200).json({ status: 'OK' }).send();
+  }).catch(() => {
+    res
+      .status(500)
+      .json({ status: 'ERROR', reason: 'Could not publish transaction' })
+      .send();
+  });
 };
 
 export default handler;
