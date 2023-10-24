@@ -21,7 +21,6 @@ import { nip19 } from 'nostr-tools';
 const nostrPubKey: string = requiredEnvVar('NOSTR_PUBLIC_KEY');
 const ledgerPubKey: string = requiredEnvVar('LEDGER_PUBLIC_KEY');
 
-
 const validatePubkey = (pubkey: string): string | null => {
   const hex64regex: RegExp = /^[0-9a-f]{64}$/gi;
   const bech32regex: RegExp = /^npub1[023456789acdefghjklmnpqrstuvwxyz]{58}$/gi;
@@ -152,14 +151,17 @@ const handler = async (req: ExtendedRequest, res: Response) => {
     return;
   }
 
-  req.context.outbox.publish(transactionEvent).then(() => {
-    res.status(200).json({ status: 'OK' }).send();
-  }).catch(() => {
-    res
-      .status(500)
-      .json({ status: 'ERROR', reason: 'Could not publish transaction' })
-      .send();
-  });
+  req.context.outbox
+    .publish(transactionEvent)
+    .then(() => {
+      res.status(200).json({ status: 'OK' }).send();
+    })
+    .catch(() => {
+      res
+        .status(500)
+        .json({ status: 'ERROR', reason: 'Could not publish transaction' })
+        .send();
+    });
 };
 
 export default handler;

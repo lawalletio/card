@@ -215,7 +215,11 @@ export const uuid2suuid = (uuid: string): string | null => {
 };
 
 export const suuid2uuid = (suuid: string): string | null => {
-  if (!suuid.match(/./g)?.every((c: string) => { return sAlpha.includes(c); })) {
+  if (
+    !suuid.match(/./g)?.every((c: string) => {
+      return sAlpha.includes(c);
+    })
+  ) {
     return null;
   }
 
