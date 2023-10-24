@@ -208,9 +208,9 @@ export const uuid2suuid = (uuid: string): string | null => {
     .map((hexPair: string) => BigInt(parseInt(hexPair, 16)))
     .reduce((acc: bigint, curr: bigint) => acc * 256n + curr);
   let suuid: string = '';
-  while (n) {
+  do {
     [suuid, n] = [sAlpha[Number(n % sAlphaLength)] + suuid, n / sAlphaLength];
-  }
+  } while (n);
   return suuid;
 };
 
@@ -221,7 +221,7 @@ export const suuid2uuid = (suuid: string): string | null => {
 
   let n: bigint = (suuid.match(/./g) ?? [])
     .map((char: string) => BigInt(sAlpha.indexOf(char)))
-    .reduce((acc: bigint, curr: bigint) => acc * sAlphaLength + curr);
+    .reduce((acc: bigint, curr: bigint) => acc * sAlphaLength + curr, 0n);
   if (0xffffffffffffffffffffffffffffffffn < n) {
     throw new Error('Out of range');
   }
