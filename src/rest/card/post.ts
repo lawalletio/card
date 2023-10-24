@@ -45,16 +45,28 @@ function validateDelegationConditions(
     const mSince: RegExpExecArray | null = rSince.exec(part);
     const mUntil: RegExpExecArray | null = rUntil.exec(part);
 
-    if (null !== mKind && null === kind) {
-      kind = parseInt(mKind.groups?.kind ?? '');
-    } else if (null !== mSince && null === since) {
-      since = parseInt(mSince.groups?.ts ?? '');
-    } else if (null !== mUntil && null === until) {
-      until = parseInt(mUntil.groups?.ts ?? '');
+    if (null !== mKind) {
+      if (null === kind) {
+        kind = parseInt(mKind.groups?.kind ?? '', 10);
+      } else {
+        return null;
+      }
+    } else if (null !== mSince) {
+      if (null === since) {
+        since = parseInt(mSince.groups?.ts ?? '', 10);
+      } else {
+        return null;
+      }
+    } else if (null !== mUntil) {
+      if (null === until) {
+        until = parseInt(mUntil.groups?.ts ?? '', 10);
+      } else {
+        return null;
+      }
     }
   }
 
-  if (null === kind || null === since || null === until || until <= since) {
+  if (null === kind || null === since || null === until || isNaN(kind) || isNaN(since) || isNaN(until) || until <= since) {
     return null;
   }
 
