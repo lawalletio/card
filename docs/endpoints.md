@@ -5,14 +5,16 @@ The card module makes available the following endpoints
 <!-- markdownlint-disable-next-line MD033 -->
 <a name="top"></a>
 
-- [Configuration endpoints](#configuration-endpoints)
+- [Configuration Endpoints](#configuration-endpoints)
   - [Initialization](#initialization)
   - [Association](#association)
   - [Activation](#activation)
-- [Payment endpoints](#payment-endpoints)
+- [Payment Endpoints](#payment-endpoints)
   - [LUD-03 Scan](#lud-03-scan)
   - [Standard LUD-03 Callback](#standard-lud-03-callback)
   - [Extended LUD-03 Callback](#extended-lud-03-callback)
+- [Utility Endpoints](#utility-endpoints)
+  - [Retrieve Associated `npub`](#retrieve-associated-npub)
 
 ## Configuration endpoints
 
@@ -239,3 +241,20 @@ Request body:
   }
 }
 ```
+
+## Utility Endpoints
+
+[Go to top](#top)
+
+### Retrieve Associated `npub`
+
+[Go to top](#top)
+
+#### `GET /card/holder`
+
+Query parameters:
+
+- **`p: string`:** the PICC data returned by the NTAG.
+- **`c: string`:** the HMAC returned by the NTAG.
+
+Response: a NOSTR event with the associated pubkey (as a hexadecimal string) in the event's `content`.
