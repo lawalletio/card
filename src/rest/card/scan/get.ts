@@ -21,7 +21,8 @@ const federationId: string = requiredEnvVar(
 ).toLowerCase();
 const apiBaseUrl: string = requiredEnvVar('LAWALLET_API_BASE_URL');
 
-const laWalletHeader: string = 'X-LaWallet-Settings';
+const laWalletActionHeader: string = 'X-LaWallet-Action'.toLowerCase();
+const laWalletParamHeader: string = 'X-LaWallet-Param'.toLowerCase();
 
 /**
  * Check if the given card is enabled and has a valid card holder.
@@ -43,23 +44,42 @@ const checkStatus = (card: Card): boolean => {
 };
 
 /**
- * Parse the federation header to extract the federation ID and tokens to retrieve
+ * Parse the "X-LaWallet-*" headers
  *
- * @param header  Header to parse (possibly undefined)
- * @returns  A dictionary of "federation" and "tokens" keys, this last one an array of strings
+ * @param req  The request to parse headers from
+ * @returns  Either null if no parsing is possible, or a dictionary with "action" and "params" keys, this last one being a mapping from string parameter names to string parameter values
  */
-const parseFederationHeader = (
-  header: string | undefined,
-): { federation: string | null; tokens: string[] } => {
-  const m =
-    /^(?<federation>[a-zA-Z0-9_-]+)(;tokens=(?<tokens>[a-zA-Z0-9_-]+(:[a-zA-Z0-9_-]+)*))?$/g.exec(
-      header ?? '',
-    );
-  const federation: string | null = m?.groups?.federation ?? null;
-  const tokens: string[] = (federation === federationId
-    ? m?.groups?.tokens?.split(':')
-    : null) ?? [defaultToken];
-  return { federation: federation, tokens: tokens };
+const parseLaWalletHeaders = (
+  req: ExtendedRequest,
+): { action: string; params: { [_: string]: string } } | null => {
+  if (
+    !(laWalletActionHeader in req.headers) ||
+    typeof req.headers[laWalletActionHeader] === 'undefined'
+  ) {
+    return null;
+  }
+  if (
+    !(laWalletParamHeader in req.headers) ||
+    typeof req.headers[laWalletParamHeader] === 'undefined'
+  ) {
+    return null;
+  }
+
+  const action: string = (req.headers[laWalletActionHeader] as string).trim();
+  if (!/^[a-z0-9.-]+$/gi.test(action)) {
+    return null;
+  }
+
+  let params: { [_: string]: string } = {};
+  for (const part in (req.headers[laWalletParamHeader] as string).split(',')) {
+    const [key, ...values]: string[] = part.trim().split('=');
+    const trimKey: string = key.trim();
+    if ('' !== trimKey) {
+      params[trimKey] = values.join('=');
+    }
+  }
+
+  return { action, params };
 };
 
 /**
@@ -86,7 +106,7 @@ const buildQuasiResponse = (
   if (federation === federationId) {
     // extended response
     return {
-      tag: 'extendedWithdrawRequest',
+      tag: 'laWallet:withdrawRequest',
       callback: `${apiBaseUrl}/card/pay`,
       defaultDescription: 'LaWallet',
       tokens: tokensResponse,
@@ -143,10 +163,20 @@ const handler = async (req: ExtendedRequest, res: Response) => {
     return;
   }
 
+  const laWalletHeaders: {
+    action: string;
+    params: { [_: string]: string };
+  } | null = parseLaWalletHeaders(req);
+
+  let federation: string | null = null;
+  let tokens: string[] = [defaultToken];
+
+  if (laWalletHeaders?.action === 'extendedScan') {
+    federation = laWalletHeaders?.params?.federationId ?? null;
+    tokens = (laWalletHeaders?.params?.tokens ?? defaultToken).split(':');
+  }
+
   // 3. check limits
-  const { federation, tokens } = parseFederationHeader(
-    req.header(laWalletHeader),
-  );
   const limits: { [_: string]: number } = await getLimits(card, tokens);
   if (0 === limits.length) {
     res.status(400).json({ status: 'ERROR', reason: 'Limits exceeded' }).send();

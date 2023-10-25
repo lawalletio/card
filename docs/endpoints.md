@@ -170,10 +170,12 @@ Query parameters:
 - **`p: string`:** the PICC data returned by the NTAG.
 - **`c: string`:** the HMAC returned by the NTAG.
 
-Header:
+Headers:
 
 ```http
-x-lawallet-settings: <federation_id>;tokens=<token>:<token>:...:<token>
+X-LaWallet-Action: extendedScan
+X-LaWallet-Param: federationId=<federation_id>
+X-LaWallet-Param: tokens=<token>:<token>:...:<token>
 ```
 
 Where:
@@ -198,7 +200,7 @@ Extended [LUD-03](https://github.com/lnurl/luds/blob/luds/03.md) result (returne
 
 ```json
 {
-    "tag": "extendedWithdrawRequest",       // type of LNURL
+    "tag": "laWallet:withdrawRequest",      // type of LNURL
     "callback": "<API_BASE_URL>/card/pay",  // The URL which LN SERVICE would accept a withdrawal extended invoice as request body
     "k1": string,                           // Random or non-random string to identify the user's LN WALLET when using the callback URL
     "defaultDescription": "LaWallet",       // A default withdrawal invoice description
