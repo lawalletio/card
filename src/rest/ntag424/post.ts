@@ -33,21 +33,21 @@ function randomHex(size: number): string {
  */
 function parseCardInitRequest(content: string): CardInitRequest {
   const req = JSON.parse(content);
-  if (
-    typeof req.cid !== 'string' ||
-    typeof req.ctr !== 'number' ||
-    (typeof req.design?.uuid === 'string') ===
-      (typeof req.design?.name === 'string')
-  ) {
+
+  const cid: string | null = req?.cid ?? null;
+  const ctr: number | null = req?.ctr ?? null;
+  const designName: string | null = req?.design?.name ?? null;
+  const designUuid: string | null = req?.design?.uuid ?? null;
+
+  if (null === cid || null === ctr || (null === designName && (null === designUuid || !designUuid.match(uuidRegex)))) {
     throw new Error('Not a valid content');
   }
-  if (
-    typeof req.design.uuid === 'string' &&
-    !req.design.uuid.match(uuidRegex)
-  ) {
-    throw new Error('Not a valid uuid');
+
+  if (null === designName) {
+    return { cid, ctr, design: { uuid: designUuid as string } };
+  } else {
+    return { cid, ctr, design: { name: designName } };
   }
-  return req;
 }
 
 /**
@@ -91,7 +91,7 @@ const handler = async (req: ExtendedRequest, res: Response) => {
     req.body,
     requiredEnvVar('CARD_WRITER_PUBKEY'),
   );
-  if (!reqEvent) {
+  if (null === reqEvent) {
     log('Received invalid nostr event %O', reqEvent);
     res.status(422).send();
     return;
