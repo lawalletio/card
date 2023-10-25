@@ -65,6 +65,23 @@ curl --request POST \
 }'
 ```
 
+A `201` response status will contain a body consisting of a NOSTR event of the form:
+
+```json
+{
+  "id": "...",
+  "pubkey": "...",
+  "created_at": 1234567890,
+  "kind": 21111,
+  "tags": [
+    ["p", "..."],
+    ["t", "card-init-response"]
+  ],
+  "content": "{\"cid\":\"...\",\"k0\":\"...\",\"k1\":\"...\",\"k2\":\"...\",\"k3\":\"...\",\"k4\":\"...\",\"ctr\":1234,\"otc\":null,\"designUuid\":\"...\"}",
+  "sig": "..."
+}
+```
+
 ### Association
 
 [Go to top](#top)
@@ -83,6 +100,8 @@ Request body: a NOSTR event with `content` like:
   "otc": string  // One-time-code to associate to the NTAG (freeform, but it will usually be a sUUID)
 }
 ```
+
+This event **MUST** be signed by the `CARD_WRITER_PUBKEY`, otherwise it will be rejected with a `422` status code.
 
 Example:
 
@@ -110,6 +129,8 @@ curl --request PATCH \
   "sig": "f07dcbea398741211929bd4e24b0b3289f64ae52baa77a03ad0ee62df4a8e2c8f1ec66e0ef64725d83c74663ca8bac227be8bafc4eba96ef4de192f946cd2488"
 }'
 ```
+
+A `204` status code will be returned on success.
 
 ### Activation
 
@@ -153,6 +174,24 @@ curl --request POST \
   "content": "{\"otc\":\"weirdcode\",\"delegation\":{\"conditions\":\"kind=1112&created_at<1700762400&created_at>1698080400\",\"token\":\"dbf1ef362920cf20f9b1c1861e5491061dfb386437edf09d00f53d3f987265057d0b731e7d71d7a3eeef3c870881cca5b82647a6efa8caf04f25e0ba52606aa5\"}}",
   "sig": "285cbf75456456d7799a7450ac80b68d6ed31e833314a71609d2410016df34ef84d4c2187ae5670829909e60d0fdd73289250213e6ee90d98f7accce65317d2e"
 }'
+```
+
+A `201` response status will contain a body consisting of a NOSTR event of the form:
+
+```json
+{
+  "id": "...",
+  "pubkey": "...",
+  "created_at": 1234567890,
+  "kind": 21111,
+  "tags": [
+    ["p", "..."],
+    ["e", "..."],
+    ["t", "card-activate-response"]
+  ],
+  "content": "{\"uuid\":\"...\",\"name\":\"...\",\"description\":\"...\",\"enabled\":true,\"holderPubKey\":\"...\",\"ntag424Cid\":\"...\"}",
+  "sig": "..."
+}
 ```
 
 ## Payment endpoints
