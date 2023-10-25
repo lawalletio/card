@@ -11,7 +11,7 @@ import {
   retrieveNtag424FromPC,
 } from '@lib/card';
 
-import { Card } from '@prisma/client';
+import { Card, Ntag424 } from '@prisma/client';
 
 const log: Debugger = logger.extend('rest:card:scan');
 const debug: Debugger = log.extend('debug');
@@ -110,15 +110,20 @@ const buildQuasiResponse = (
  */
 const handler = async (req: ExtendedRequest, res: Response) => {
   // 1. check query params
+  const ntag424: Ntag424 | null = await retrieveNtag424FromPC(
+    req.query.p as string | undefined,
+    req.query.c as string | undefined,
+  );
+  if (null === ntag424) {
+    res
+      .status(400)
+      .json({ status: 'ERROR', reason: 'Failed to retrieve card data' })
+      .send();
+    return;
+  }
   const card: Card | null = await req.context.prisma.card.findUnique({
     where: {
-      ntag424Cid:
-        (
-          await retrieveNtag424FromPC(
-            req.query.p as string | undefined,
-            req.query.c as string | undefined,
-          )
-        )?.cid ?? '',
+      ntag424Cid: ntag424.cid,
     },
   });
   if (null === card) {
