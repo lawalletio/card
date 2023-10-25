@@ -11,7 +11,10 @@ import {
   retrieveNtag424FromPC,
 } from '@lib/card';
 
-import { Card, Ntag424 } from '@prisma/client';
+import { Card, Ntag424, Prisma } from '@prisma/client';
+import { NDKEvent } from '@nostr-dev-kit/ndk';
+import { getWriteNDK } from '@services/ndk';
+import { responseEvent } from '@lib/event';
 
 const log: Debugger = logger.extend('rest:card:scan');
 const debug: Debugger = log.extend('debug');
@@ -82,53 +85,7 @@ const parseLaWalletHeaders = (
   return { action, params };
 };
 
-/**
- * Build a pseudo-response (ie. a response lacking the "k1" field) for the given federation and limits
- *
- * @param federation  The federation asking for a response
- * @param limits  The limits remaining on this card
- * @returns  The corresponding pseudo-response
- */
-const buildQuasiResponse = (
-  federation: string | null,
-  limits: { [_: string]: number },
-): ScanQuasiResponse => {
-  let tokensResponse: {
-    [_: string]: { minWithdrawable: 0; maxWithdrawable: number };
-  } = {};
-  for (const tokenName in limits) {
-    tokensResponse[tokenName] = {
-      minWithdrawable: 0,
-      maxWithdrawable: limits[tokenName],
-    };
-  }
-
-  if (federation === federationId) {
-    // extended response
-    return {
-      tag: 'laWallet:withdrawRequest',
-      callback: `${apiBaseUrl}/card/pay`,
-      defaultDescription: 'LaWallet',
-      tokens: tokensResponse,
-    };
-  } else {
-    // standard response
-    return {
-      tag: 'withdrawRequest',
-      callback: `${apiBaseUrl}/card/pay`,
-      defaultDescription: 'LaWallet',
-      ...tokensResponse[defaultToken],
-    };
-  }
-};
-
-/**
- * Handle a "/scan" endpoint
- *
- * @param req  HTTP request to handle
- * @param res  HTTP response to send
- */
-const handler = async (req: ExtendedRequest, res: Response) => {
+const handleScan = async (req: ExtendedRequest, res: Response) => {
   // 1. check query params
   const ntag424: Ntag424 | null = await retrieveNtag424FromPC(
     req.query.p as string | undefined,
@@ -155,6 +112,7 @@ const handler = async (req: ExtendedRequest, res: Response) => {
   }
 
   // 2. check status & trusted merchants
+  // TODO: TRUSTED MERCHANTS
   if (!checkStatus(card)) {
     res
       .status(400)
@@ -163,31 +121,32 @@ const handler = async (req: ExtendedRequest, res: Response) => {
     return;
   }
 
-  const laWalletHeaders: {
-    action: string;
-    params: { [_: string]: string };
-  } | null = parseLaWalletHeaders(req);
-
-  let federation: string | null = null;
-  let tokens: string[] = [defaultToken];
-
-  if (laWalletHeaders?.action === 'extendedScan') {
-    federation = laWalletHeaders?.params?.federationId ?? null;
-    tokens = (laWalletHeaders?.params?.tokens ?? defaultToken).split(':');
-  }
-
   // 3. check limits
-  const limits: { [_: string]: number } = await getLimits(card, tokens);
+  const limits: { [_: string]: number } = await getLimits(card, [defaultToken]);
   if (0 === limits.length) {
     res.status(400).json({ status: 'ERROR', reason: 'Limits exceeded' }).send();
     return;
   }
 
   // 4. build responses
-  const quasiResponse: ScanQuasiResponse = buildQuasiResponse(
-    federation,
-    limits,
-  );
+  let tokensResponse: {
+    [_: string]: { minWithdrawable: 0; maxWithdrawable: number };
+  } = {};
+  for (const tokenName in limits) {
+    tokensResponse[tokenName] = {
+      minWithdrawable: 0,
+      maxWithdrawable: limits[tokenName],
+    };
+  }
+
+  // standard response
+  const quasiResponse: ScanQuasiResponse = {
+    tag: 'withdrawRequest',
+    callback: `${apiBaseUrl}/card/pay`,
+    defaultDescription: 'LaWallet',
+    ...tokensResponse[defaultToken],
+  };
+
   const response: ScanResponse = {
     k1:
       uuid2suuid(
@@ -201,6 +160,157 @@ const handler = async (req: ExtendedRequest, res: Response) => {
   };
 
   res.status(200).json(response).send();
+};
+
+const handleExtendedScan = async (req: ExtendedRequest, res: Response) => {
+  // 1. check query params
+  const ntag424: Ntag424 | null = await retrieveNtag424FromPC(
+    req.query.p as string | undefined,
+    req.query.c as string | undefined,
+  );
+  if (null === ntag424) {
+    res
+      .status(400)
+      .json({ status: 'ERROR', reason: 'Failed to retrieve card data' })
+      .send();
+    return;
+  }
+  const card: Card | null = await req.context.prisma.card.findUnique({
+    where: {
+      ntag424Cid: ntag424.cid,
+    },
+  });
+  if (null === card) {
+    res
+      .status(400)
+      .json({ status: 'ERROR', reason: 'Failed to retrieve card data' })
+      .send();
+    return;
+  }
+
+  // 2. check status & trusted merchants
+  // TODO: TRUSTED MERCHANTS
+  if (!checkStatus(card)) {
+    res
+      .status(400)
+      .json({ status: 'ERROR', reason: 'Failed to retrieve card data' })
+      .send();
+    return;
+  }
+
+  let tokens: string[] = (
+    parseLaWalletHeaders(req)?.params?.tokens ?? defaultToken
+  )
+    .split(':')
+    .map((token: string) => {
+      return token.trim();
+    });
+
+  // 3. check limits
+  const limits: { [_: string]: number } = await getLimits(card, tokens);
+  if (0 === limits.length) {
+    res.status(400).json({ status: 'ERROR', reason: 'Limits exceeded' }).send();
+    return;
+  }
+
+  // 4. build responses
+  let tokensResponse: {
+    [_: string]: { minWithdrawable: 0; maxWithdrawable: number };
+  } = {};
+  for (const tokenName in limits) {
+    tokensResponse[tokenName] = {
+      minWithdrawable: 0,
+      maxWithdrawable: limits[tokenName],
+    };
+  }
+
+  // extended response
+  const quasiResponse: ScanQuasiResponse = {
+    tag: 'laWallet:withdrawRequest',
+    callback: `${apiBaseUrl}/card/pay`,
+    defaultDescription: 'LaWallet',
+    tokens: tokensResponse,
+  };
+
+  const response: ScanResponse = {
+    k1:
+      uuid2suuid(
+        (
+          await req.context.prisma.paymentRequest.create({
+            data: { response: quasiResponse, cardUuid: card.uuid },
+          })
+        ).uuid,
+      ) ?? '',
+    ...quasiResponse,
+  };
+
+  res.status(200).json(response).send();
+};
+
+const handleIdentityQuery = async (req: ExtendedRequest, res: Response) => {
+  const ntag424 = await retrieveNtag424FromPC(
+    req.query.p as string | undefined,
+    req.query.c as string | undefined,
+  );
+  if (null === ntag424) {
+    res
+      .status(400)
+      .json({ status: 'ERROR', reason: 'Failed to retrieve card data' })
+      .send();
+    return;
+  }
+
+  const card: Prisma.CardGetPayload<{ include: { holder: true } }> | null =
+    await req.context.prisma.card.findUnique({
+      where: { ntag424Cid: ntag424.cid },
+      include: { holder: true },
+    });
+  if ((card?.holder ?? null) === null) {
+    res
+      .status(404)
+      .json({ status: 'ERROR', reason: 'Failed to retrieve card data' })
+      .send();
+    return;
+  }
+
+  const resEvent: NDKEvent = new NDKEvent(
+    getWriteNDK(),
+    responseEvent('card-holder-response', JSON.stringify(card?.holder?.pubKey)),
+  );
+
+  res
+    .status(200)
+    .json(await resEvent.toNostrEvent())
+    .send();
+  return;
+};
+
+/**
+ * Handle a "/scan" endpoint
+ *
+ * @param req  HTTP request to handle
+ * @param res  HTTP response to send
+ */
+const handler = async (req: ExtendedRequest, res: Response) => {
+  const laWalletHeaders: {
+    action: string;
+    params: { [_: string]: string };
+  } | null = parseLaWalletHeaders(req);
+  if (laWalletHeaders?.params?.federationId ?? null === federationId) {
+    if (laWalletHeaders?.action ?? null === 'extendedScan') {
+      handleExtendedScan(req, res);
+    } else if (laWalletHeaders?.action ?? null === 'identityQuery') {
+      handleIdentityQuery(req, res);
+    } else {
+      res
+        .status(400)
+        .json({ status: 'ERROR', reason: 'Unrecognized action' })
+        .send();
+      return;
+    }
+  } else {
+    handleScan(req, res);
+  }
 };
 
 export default handler;

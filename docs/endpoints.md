@@ -252,11 +252,23 @@ Request body:
 
 [Go to top](#top)
 
-#### `GET /card/holder`
+<!-- markdownlint-disable-next-line MD024 -->
+#### `GET /card/scan`
 
 Query parameters:
 
 - **`p: string`:** the PICC data returned by the NTAG.
 - **`c: string`:** the HMAC returned by the NTAG.
+
+Headers:
+
+```http
+X-LaWallet-Action: identityQuery
+X-LaWallet-Param: federationId=<federation_id>
+```
+
+Where:
+
+- **`federation_id: string`:** the ID used to identify modules in the same "federation".
 
 Response: a NOSTR event with the associated pubkey (as a hexadecimal string) in the event's `content`.
