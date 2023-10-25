@@ -30,7 +30,7 @@
   "author": "Agustin Kassis",
   "license": "MIT",
   "prisma": {
-    "seed": "ts-node prisma/seed.ts"
+    "seed": "ts-node --esm -O {\"module\":\"es2020\"} prisma/seed.mts"
   },
   "dependencies": {
     "@nostr-dev-kit/ndk": "^0.8.23",

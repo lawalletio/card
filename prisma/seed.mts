@@ -51,14 +51,10 @@ const cardDesigns = [
     name: "There's no Second Best",
     description: "\"There's no Second Best\" theme",
   },
-  {
-    name: "There's no Second Best",
-    description: "\"There's no Second Best\" theme",
-  },
 ];
 
 async function main() {
-  prisma.design.createMany({ data: cardDesigns });
+  await prisma.design.createMany({ data: cardDesigns });
 }
 
 main()
