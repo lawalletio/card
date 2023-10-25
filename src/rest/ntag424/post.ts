@@ -60,11 +60,11 @@ function createNtag424({
 }: CardInitRequest): Prisma.Ntag424CreateInput {
   return {
     cid,
-    k0: randomHex(16),
-    k1: requiredEnvVar('SERVER_AES_KEY_HEX'),
-    k2: randomHex(16),
-    k3: randomHex(16),
-    k4: randomHex(16),
+    k0: randomHex(16).toLowerCase(),
+    k1: requiredEnvVar('SERVER_AES_KEY_HEX').toLowerCase(),
+    k2: randomHex(16).toLowerCase(),
+    k3: randomHex(16).toLowerCase(),
+    k4: randomHex(16).toLowerCase(),
     ctr,
     design: { connect: design },
   };
