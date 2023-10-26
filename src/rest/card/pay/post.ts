@@ -1,8 +1,14 @@
 import type { Response } from 'express';
 import type { ExtendedRequest } from '@type/request';
 
-import { nowInSeconds, requiredEnvVar, suuid2uuid } from '@lib/utils';
-import { Kind } from '@lib/event';
+import {
+  logger,
+  nowInSeconds,
+  requiredEnvVar,
+  requiredProp,
+  suuid2uuid,
+} from '@lib/utils';
+import { Kind, parseEventBody } from '@lib/event';
 
 import { Delegation } from '@prisma/client';
 
@@ -17,6 +23,10 @@ import {
 } from '@lib/card';
 import { NostrEvent } from '@nostr-dev-kit/ndk';
 import { nip19 } from 'nostr-tools';
+import { Debugger } from 'debug';
+
+const log: Debugger = logger.extend('rest:card:pay:post');
+const error: Debugger = log.extend('error');
 
 const nostrPubKey: string = requiredEnvVar('NOSTR_PUBLIC_KEY');
 const ledgerPubKey: string = requiredEnvVar('LEDGER_PUBLIC_KEY');
@@ -34,9 +44,8 @@ const validatePubkey = (pubkey: string): string | null => {
 };
 
 const generateTransactionEvent = async (
-  k1: string,
-  npub: string,
-  tokens: Tokens,
+  { k1, npub, tokens }: PayReq,
+  eventId: string,
 ): Promise<NostrEvent | null> => {
   const recipientPubkey: string | null = validatePubkey(npub);
   if (null === recipientPubkey) {
@@ -88,6 +97,7 @@ const generateTransactionEvent = async (
     tags: [
       ['p', ledgerPubKey],
       ['p', recipientPubkey],
+      ['e', eventId],
       ['t', 'internal-transaction-start'],
       [
         'delegation',
@@ -101,36 +111,49 @@ const generateTransactionEvent = async (
   };
 };
 
-type PayBody = {
+type PayReq = {
   k1: string;
   npub: string;
   tokens: Tokens;
 };
 
-const validateBody = (
-  body: PayBody,
-): { k1: string; npub: string; tokens: Tokens } | null => {
+const validateContent = (content: string): PayReq | null => {
+  let req;
+  try {
+    req = JSON.parse(content);
+  } catch (e) {
+    log('Could not parse event content, error: %O', e);
+    return null;
+  }
   if (
-    null === body ||
-    !('k1' in body && 'npub' in body && 'tokens' in body) ||
-    typeof body.tokens !== 'object'
+    null === req ||
+    !('k1' in req && 'npub' in req && 'tokens' in req) ||
+    typeof req.tokens !== 'object'
   ) {
     return null;
   }
-  for (const key in body.tokens) {
+  for (const key in req.tokens) {
     if (typeof key !== 'string') {
       return null;
     }
-    if (typeof body.tokens[key as keyof typeof body.tokens] !== 'number') {
+    if (typeof req.tokens[key as keyof typeof req.tokens] !== 'number') {
       return null;
     }
   }
-  return body as PayBody;
+  return req as PayReq;
 };
 
 const handler = async (req: ExtendedRequest, res: Response) => {
-  const body: PayBody | null = validateBody(req.body);
-  if (null === body) {
+  const reqEvent: NostrEvent | null = parseEventBody(req.body);
+  if (null === reqEvent) {
+    res
+      .status(400)
+      .json({ status: 'ERROR', reason: 'Invalid transaction' })
+      .send();
+    return;
+  }
+  const content: PayReq | null = validateContent(reqEvent.content);
+  if (null === content) {
     res
       .status(400)
       .json({ status: 'ERROR', reason: 'Invalid transaction' })
@@ -139,9 +162,8 @@ const handler = async (req: ExtendedRequest, res: Response) => {
   }
 
   const transactionEvent: NostrEvent | null = await generateTransactionEvent(
-    body.k1,
-    body.npub,
-    body.tokens,
+    content,
+    requiredProp(reqEvent, 'id'),
   );
   if (null === transactionEvent) {
     res
@@ -156,7 +178,8 @@ const handler = async (req: ExtendedRequest, res: Response) => {
     .then(() => {
       res.status(200).json({ status: 'OK' }).send();
     })
-    .catch(() => {
+    .catch((e) => {
+      error('Unexpected error while publishing transaction start: %O', e);
       res
         .status(500)
         .json({ status: 'ERROR', reason: 'Could not publish transaction' })
