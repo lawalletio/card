@@ -117,6 +117,7 @@ function defaultLimits(): Prisma.LimitCreateNestedManyWithoutCardInput {
 function defaultTrustedMerchants(): Prisma.TrustedMerchantsUncheckedCreateWithoutHolderInput[] {
   return requiredEnvVar('DEFAULT_TRUSTED_MERCHANTS')
     .split(':')
+    .filter((m) => m)
     .map<{ merchantPubKey: string }>((m) => {
       return { merchantPubKey: m };
     });
@@ -127,7 +128,7 @@ function defaultTrustedMerchants(): Prisma.TrustedMerchantsUncheckedCreateWithou
  *
  * If there is no holder with that pubkey, create one. Associate
  * delegation from the request and trusted merchants from the default
- * ones
+ * ones if they exist
  */
 function findOrCreateHolder(
   prisma: PrismaClient,
@@ -135,47 +136,43 @@ function findOrCreateHolder(
   delegation: DelegationReq,
 ): Promise<Holder> {
   const trustedMerchants = defaultTrustedMerchants();
-  return prisma.holder.upsert({
-    create: {
-      pubKey,
-      delegations: {
+  const create: Prisma.HolderCreateInput = {
+    pubKey,
+    delegations: { create: delegation },
+  };
+  const update: Prisma.HolderUpdateInput = {
+    delegations: {
+      connectOrCreate: {
+        where: { delegationToken: delegation.delegationToken },
         create: delegation,
       },
-      trustedMerchants: {
-        createMany: {
-          data: trustedMerchants,
-        },
-      },
     },
-    update: {
-      delegations: {
-        connectOrCreate: {
-          where: {
-            delegationToken: delegation.delegationToken,
-          },
-          create: delegation,
-        },
-      },
-      trustedMerchants: {
-        connectOrCreate:
-          trustedMerchants.map<Prisma.TrustedMerchantsCreateOrConnectWithoutHolderInput>(
-            ({ merchantPubKey }) => {
-              return {
-                where: {
-                  holderPubKey_merchantPubKey: {
-                    holderPubKey: pubKey,
-                    merchantPubKey,
-                  },
+  };
+  if (0 < trustedMerchants.length) {
+    create.trustedMerchants = {
+      createMany: { data: trustedMerchants },
+    };
+    update.trustedMerchants = {
+      connectOrCreate:
+        trustedMerchants.map<Prisma.TrustedMerchantsCreateOrConnectWithoutHolderInput>(
+          ({ merchantPubKey }) => {
+            return {
+              where: {
+                holderPubKey_merchantPubKey: {
+                  holderPubKey: pubKey,
+                  merchantPubKey,
                 },
-                create: { merchantPubKey },
-              };
-            },
-          ),
-      },
-    },
-    where: {
-      pubKey,
-    },
+              },
+              create: { merchantPubKey },
+            };
+          },
+        ),
+    };
+  }
+  return prisma.holder.upsert({
+    create,
+    update,
+    where: { pubKey },
     select: { pubKey: true },
   });
 }
