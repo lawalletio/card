@@ -39,7 +39,12 @@ function parseCardInitRequest(content: string): CardInitRequest {
   const designName: string | null = req?.design?.name ?? null;
   const designUuid: string | null = req?.design?.uuid ?? null;
 
-  if (null === cid || null === ctr || (null === designName && (null === designUuid || !designUuid.match(uuidRegex)))) {
+  if (
+    null === cid ||
+    null === ctr ||
+    (null === designName &&
+      (null === designUuid || !designUuid.match(uuidRegex)))
+  ) {
     throw new Error('Not a valid content');
   }
 
