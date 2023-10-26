@@ -7,6 +7,8 @@ import { logger, nowInSeconds, requiredEnvVar, requiredProp } from '@lib/utils';
 const log: Debugger = logger.extend('lib:event');
 const debug: Debugger = log.extend('debug');
 
+const MAX_EVENT_AGE = 180; // 3 minutes
+
 export enum Kind {
   REGULAR = 1112,
   EPHEMERAL = 21111,
@@ -48,6 +50,7 @@ export function parseEventBody(
     !validateEvent(event) ||
     !verifySignature(event) ||
     !validateNip26(event) ||
+    event.created_at + MAX_EVENT_AGE < nowInSeconds() ||
     (expectedPubkey && event.pubkey !== expectedPubkey)
   ) {
     log('Received invalid nostr event %s', event.id);
