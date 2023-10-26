@@ -74,7 +74,7 @@ const parseLaWalletHeaders = (
   }
 
   let params: { [_: string]: string } = {};
-  for (const part in (req.headers[laWalletParamHeader] as string).split(',')) {
+  for (const part of (req.headers[laWalletParamHeader] as string).split(',')) {
     const [key, ...values]: string[] = part.trim().split('=');
     const trimKey: string = key.trim();
     if ('' !== trimKey) {

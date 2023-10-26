@@ -54,7 +54,7 @@ const generateTransactionEvent = async (
   }
   const paymentRequestResponse: ScanResponseExtended =
     paymentRequest.response as ScanResponseExtended;
-  if ('extendedWithdrawRequest' !== paymentRequestResponse.tag) {
+  if ('laWallet:withdrawRequest' !== paymentRequestResponse.tag) {
     return null;
   }
   const limits: { [_: string]: number } = await getLimits(
@@ -125,7 +125,7 @@ const validateBody = (
       return null;
     }
   }
-  return body as { k1: string; npub: string; tokens: Tokens };
+  return body as PayBody;
 };
 
 const handler = async (req: ExtendedRequest, res: Response) => {
