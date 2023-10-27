@@ -153,9 +153,9 @@ export const setUpSubscriptions = (
         .subscribe(filter, {
           closeOnEose: false,
         })
-        .on('event', () => {
+        .on('event', (event) => {
           try {
-            getHandler(ctx, 0);
+            getHandler(ctx, 0)(event);
           } catch (e) {
             warn(
               `Unexpected exception found when handling ${matches?.groups?.name}: %O`,
