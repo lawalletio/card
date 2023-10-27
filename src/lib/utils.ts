@@ -1,7 +1,7 @@
 import debug from 'debug';
 import { Router } from 'express';
 import { globSync } from 'glob';
-import NDK from '@nostr-dev-kit/ndk';
+import NDK, { NostrEvent } from '@nostr-dev-kit/ndk';
 
 import Path from 'path';
 import { Context } from '@type/request';
@@ -153,9 +153,11 @@ export const setUpSubscriptions = (
         .subscribe(filter, {
           closeOnEose: false,
         })
-        .on('event', (event) => {
+        .on('event', async (nostrEvent: NostrEvent): Promise<void> => {
           try {
-            getHandler(ctx, 0)(event);
+            const handler: (nostrEvent: NostrEvent) => Promise<void> =
+              getHandler(ctx, 0);
+            return await handler(nostrEvent);
           } catch (e) {
             warn(
               `Unexpected exception found when handling ${matches?.groups?.name}: %O`,
