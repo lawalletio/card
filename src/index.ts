@@ -17,6 +17,7 @@ const port = process.env.PORT || 8000;
 
 const log: Debugger = logger.extend('index');
 const warn: Debugger = log.extend('warn');
+const error: Debugger = log.extend('error');
 
 const writeNDK = getWriteNDK();
 const ctx: Context = {
@@ -92,3 +93,9 @@ if (startExpress) {
     log(`Server is running on port ${port}`);
   });
 }
+
+process.on('uncaughtException', (err) => {
+  error('Unexpected uncaught exception: %O', err);
+  log('Shutting down...');
+  process.exit(1);
+});
