@@ -49,11 +49,11 @@ readNDK.on('error', (err) => {
 
 // Connect to Nostr
 log('Connecting to Nostr...');
-readNDK.connect().catch((error) => {
-  warn('Error connecting to read relay: %o', error);
+readNDK.connect().catch((e) => {
+  warn('Error connecting to read relay: %o', e);
 });
-writeNDK.connect().catch((error) => {
-  warn('Error connecting to write relay: %o', error);
+writeNDK.connect().catch((e) => {
+  warn('Error connecting to write relay: %o', e);
 });
 
 // Generate routes
