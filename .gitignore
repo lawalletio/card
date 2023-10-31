@@ -1,9 +1,9 @@
 # Ignore hidden files
 .*
 # But pay attention to certain specific ones
-# !.env.example
+!.env.example
 !.envrc
-!.eslintrc.json
+!.eslintrc
 !.gitattributes
 !.gitconfig
 !.github
