@@ -14,7 +14,7 @@
 !.pnp.cjs
 !.pnp.loader.mjs
 !.prettierignore
-!.prettierrc.json
+!.prettierrc
 
 # Pipeline
 node_modules
