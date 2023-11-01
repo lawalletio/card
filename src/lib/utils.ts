@@ -193,7 +193,7 @@ export const requiredProp = <T>(obj: any, key: string): T => {
 };
 
 export const nowInSeconds = (): number => {
-  return Math.round(Date.now() / 1000);
+  return Math.floor(Date.now() / 1000);
 };
 
 export const isEmpty = (obj: object): boolean => {
