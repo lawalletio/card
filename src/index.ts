@@ -40,7 +40,12 @@ if (null === subscribed) {
 }
 
 readNDK.pool.on('relay:connect', (relay: NDKRelay) => {
-  log('Connected to Relay', relay.url);
+  log('Connected to Relay %s', relay.url);
+});
+
+readNDK.pool.on('relay:disconnect', (relay: NDKRelay) => {
+  log('Disconnected from relay %s, resubscribing for reconnection', relay.url);
+  setUpSubscriptions(ctx, readNDK, path.join(__dirname, './nostr'));
 });
 
 readNDK.on('error', (err) => {
