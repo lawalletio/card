@@ -23,7 +23,7 @@ export class OutboxService implements Outbox {
           }
         })
         .catch((e) => {
-          error('Error found when publishing event %s: %O', event.id, e);
+          error('Error found when publishing event %O: %O', event, e);
           reject('Unexpected error publishing event');
         });
     });
