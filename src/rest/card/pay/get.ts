@@ -1,7 +1,7 @@
 import type { Response } from 'express';
 import type { ExtendedRequest } from '@type/request';
 
-import { nowInSeconds, requiredEnvVar, suuid2uuid } from '@lib/utils';
+import { logger, nowInSeconds, requiredEnvVar, suuid2uuid } from '@lib/utils';
 import { Kind } from '@lib/event';
 
 import { Delegation } from '@prisma/client';
@@ -17,6 +17,10 @@ import {
   getLimits,
 } from '@lib/card';
 import { NostrEvent } from '@nostr-dev-kit/ndk';
+import { Debugger } from 'debug';
+
+const log: Debugger = logger.extend('rest:card:pay:get');
+const debug: Debugger = log.extend('debug');
 
 const nostrPubKey: string = requiredEnvVar('NOSTR_PUBLIC_KEY');
 const ledgerPubKey: string = requiredEnvVar('LEDGER_PUBLIC_KEY');
@@ -43,21 +47,25 @@ const generateTransactionEvent = async (
   pr: string | undefined,
 ): Promise<NostrEvent | null> => {
   if (typeof k1 !== 'string' || typeof pr !== 'string') {
+    debug('Invalid k1: %o or pr: %o', k1, pr);
     return null;
   }
 
   let msats: number | null = extractMsatsFromBolt11PR(pr);
   if (null === msats) {
+    debug('Could not extract invoice amount');
     return null;
   }
 
   const paymentUuid: string | null = suuid2uuid(k1);
   if (null === paymentUuid) {
+    debug('Could not parse k1 suuid: %o', k1);
     return null;
   }
   const paymentRequest: PaymentRequestWithCard | null =
     await getExtantPaymentRequestByUuid(paymentUuid);
   if (null === paymentRequest) {
+    debug('Could not find a payment request with uuid: %o', paymentUuid);
     return null;
   }
   const paymentRequestResponse: ScanResponseBasic =
@@ -66,6 +74,7 @@ const generateTransactionEvent = async (
     'withdrawRequest' !== paymentRequestResponse.tag ||
     paymentRequestResponse.maxWithdrawable < msats
   ) {
+    debug('Invalid tag or amount for payment request');
     return null;
   }
 
@@ -73,6 +82,7 @@ const generateTransactionEvent = async (
     defaultToken,
   ]);
   if ((limits[defaultToken] ?? 0) < msats) {
+    debug('Exeeded limit for token: %o', defaultToken);
     return null;
   }
 
@@ -80,6 +90,7 @@ const generateTransactionEvent = async (
     paymentRequest.cardUuid,
   );
   if (null === delegation) {
+    debug('Card does not have delegation');
     return null;
   }
 
