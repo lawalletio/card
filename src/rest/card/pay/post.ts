@@ -2,6 +2,7 @@ import type { Response } from 'express';
 import type { ExtendedRequest } from '@type/request';
 
 import {
+  fetchBalances,
   logger,
   nowInSeconds,
   requiredEnvVar,
@@ -24,6 +25,7 @@ import {
 import { NostrEvent } from '@nostr-dev-kit/ndk';
 import { nip19 } from 'nostr-tools';
 import { Debugger } from 'debug';
+import { getReadNDK } from '@services/ndk';
 
 const log: Debugger = logger.extend('rest:card:pay:post');
 const error: Debugger = log.extend('error');
@@ -59,15 +61,26 @@ const generateTransactionEvent = async (
   const paymentRequest: PaymentRequestWithCard | null =
     await getExtantPaymentRequestByUuid(paymentUuid);
   if (null === paymentRequest) {
+    error('Could not find a payment request with uuid: %o', paymentUuid);
+    return null;
+  }
+  if (null === paymentRequest.card.holderPubKey) {
+    error('No card holder for payment request with uuid: %o', paymentUuid);
     return null;
   }
   const paymentRequestResponse: ScanResponseExtended =
     paymentRequest.response as ScanResponseExtended;
   if ('laWallet:withdrawRequest' !== paymentRequestResponse.tag) {
+    error('Tag mismatch for payment request with uuid: %o', paymentUuid);
     return null;
   }
   const limits: { [_: string]: number } = await getLimits(
     paymentRequest.card,
+    Object.keys(tokens),
+  );
+  const balance: { [_: string]: number } = await fetchBalances(
+    getReadNDK(),
+    paymentRequest.card.holderPubKey,
     Object.keys(tokens),
   );
 
@@ -75,9 +88,16 @@ const generateTransactionEvent = async (
     if (
       !(token in paymentRequestResponse.tokens) ||
       !(token in limits) ||
+      !(token in balance) ||
       paymentRequestResponse.tokens[token].maxWithdrawable < tokens[token] ||
-      limits[token] < tokens[token]
+      limits[token] < tokens[token] ||
+      balance[token] < tokens[token]
     ) {
+      error(
+        'Bounds check failed for token %o for payment request with uuid: %o',
+        token,
+        paymentUuid,
+      );
       return null;
     }
   }

@@ -1,7 +1,13 @@
 import type { Response } from 'express';
 import type { ExtendedRequest } from '@type/request';
 
-import { logger, nowInSeconds, requiredEnvVar, suuid2uuid } from '@lib/utils';
+import {
+  fetchBalances,
+  logger,
+  nowInSeconds,
+  requiredEnvVar,
+  suuid2uuid,
+} from '@lib/utils';
 import { Kind } from '@lib/event';
 
 import { Delegation } from '@prisma/client';
@@ -18,6 +24,7 @@ import {
 } from '@lib/card';
 import { NostrEvent } from '@nostr-dev-kit/ndk';
 import { Debugger } from 'debug';
+import { getReadNDK } from '@services/ndk';
 
 const log: Debugger = logger.extend('rest:card:pay:get');
 const debug: Debugger = log.extend('debug');
@@ -68,6 +75,10 @@ const generateTransactionEvent = async (
     debug('Could not find a payment request with uuid: %o', paymentUuid);
     return null;
   }
+  if (null === paymentRequest.card.holderPubKey) {
+    debug('No card holder for payment request with uuid: %o', paymentUuid);
+    return null;
+  }
   const paymentRequestResponse: ScanResponseBasic =
     paymentRequest.response as ScanResponseBasic;
   if (
@@ -81,8 +92,17 @@ const generateTransactionEvent = async (
   const limits: { [_: string]: number } = await getLimits(paymentRequest.card, [
     defaultToken,
   ]);
+  const balance: { [_: string]: number } = await fetchBalances(
+    getReadNDK(),
+    paymentRequest.card.holderPubKey,
+    [defaultToken],
+  );
   if ((limits[defaultToken] ?? 0) < msats) {
     debug('Exceeded limit for token: %o', defaultToken);
+    return null;
+  }
+  if ((balance[defaultToken] ?? 0) < msats) {
+    debug('Exceeded balance for token: %o', defaultToken);
     return null;
   }
 
