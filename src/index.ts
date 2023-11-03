@@ -28,24 +28,24 @@ const ctx: Context = {
 // Instantiate ndk
 log('Instantiate NDK');
 const readNDK = getReadNDK();
-log('Subscribing...');
-const subscribed = setUpSubscriptions(
-  ctx,
-  readNDK,
-  path.join(__dirname, './nostr'),
-);
 
-if (null === subscribed) {
-  throw new Error('Error setting up subscriptions');
-}
-
-readNDK.pool.on('relay:connect', (relay: NDKRelay) => {
+readNDK.pool.on('relay:connect', async (relay: NDKRelay) => {
   log('Connected to Relay %s', relay.url);
+  log('Subscribing...');
+  const subscribed = await setUpSubscriptions(
+    ctx,
+    readNDK,
+    writeNDK,
+    path.join(__dirname, './nostr'),
+  );
+
+  if (null === subscribed) {
+    throw new Error('Error setting up subscriptions');
+  }
 });
 
 readNDK.pool.on('relay:disconnect', (relay: NDKRelay) => {
-  log('Disconnected from relay %s, resubscribing for reconnection', relay.url);
-  setUpSubscriptions(ctx, readNDK, path.join(__dirname, './nostr'));
+  log('Disconnected from relay %s', relay.url);
 });
 
 readNDK.on('error', (err) => {
