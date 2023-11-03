@@ -92,6 +92,7 @@ const handleScan = async (req: ExtendedRequest, res: Response) => {
     req.query.c as string | undefined,
   );
   if (null === ntag424) {
+    debug('Ntag 424 not found');
     res
       .status(400)
       .json({ status: 'ERROR', reason: 'Failed to retrieve card data' })
@@ -104,6 +105,7 @@ const handleScan = async (req: ExtendedRequest, res: Response) => {
     },
   });
   if (null === card) {
+    debug('Card not found');
     res
       .status(400)
       .json({ status: 'ERROR', reason: 'Failed to retrieve card data' })
