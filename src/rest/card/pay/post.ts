@@ -44,10 +44,10 @@ const validatePubkey = (pubkey: string): string | null => {
 };
 
 const generateTransactionEvent = async (
-  { k1, npub, tokens }: PayReq,
+  { k1, pubkey, tokens }: PayReq,
   eventId: string,
 ): Promise<NostrEvent | null> => {
-  const recipientPubkey: string | null = validatePubkey(npub);
+  const recipientPubkey: string | null = validatePubkey(pubkey);
   if (null === recipientPubkey) {
     return null;
   }
@@ -113,7 +113,7 @@ const generateTransactionEvent = async (
 
 type PayReq = {
   k1: string;
-  npub: string;
+  pubkey: string;
   tokens: Tokens;
 };
 
@@ -127,7 +127,7 @@ const validateContent = (content: string): PayReq | null => {
   }
   if (
     null === req ||
-    !('k1' in req && 'npub' in req && 'tokens' in req) ||
+    !('k1' in req && 'pubkey' in req && 'tokens' in req) ||
     typeof req.tokens !== 'object'
   ) {
     return null;
