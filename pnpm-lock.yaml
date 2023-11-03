@@ -1067,7 +1067,7 @@ packages:
       eslint: 8.52.0
       eslint-config-prettier: 8.10.0(eslint@8.52.0)
       eslint-plugin-import: 2.29.0(@typescript-eslint/parser@5.62.0)(eslint-import-resolver-typescript@3.6.1)(eslint@8.52.0)
-      esm-loader-typescript: 1.0.5
+      esm-loader-typescript: 1.0.6
       eventemitter3: 5.0.1
       light-bolt11-decoder: 3.0.0
       node-fetch: 3.3.2
@@ -2211,7 +2211,7 @@ packages:
     hasBin: true
     dependencies:
       caniuse-lite: 1.0.30001559
-      electron-to-chromium: 1.4.571
+      electron-to-chromium: 1.4.575
       node-releases: 2.0.13
       update-browserslist-db: 1.0.13(browserslist@4.22.1)
     dev: true
@@ -2712,8 +2712,8 @@ packages:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
     dev: false
 
-  /electron-to-chromium@1.4.571:
-    resolution: {integrity: sha512-Sc+VtKwKCDj3f/kLBjdyjMpNzoZsU6WuL/wFb6EH8USmHEcebxRXcRrVpOpayxd52tuey4RUDpUsw5OS5LhJqg==}
+  /electron-to-chromium@1.4.575:
+    resolution: {integrity: sha512-kY2BGyvgAHiX899oF6xLXSIf99bAvvdPhDoJwG77nxCSyWYuRH6e9a9a3gpXBvCs6lj4dQZJkfnW2hdKWHEISg==}
     dev: true
 
   /elliptic@6.5.4:
@@ -3195,8 +3195,8 @@ packages:
     transitivePeerDependencies:
       - supports-color
 
-  /esm-loader-typescript@1.0.5:
-    resolution: {integrity: sha512-BeHp2TrYbRL9fUttlyzPQJPTvLDBXXUli09UNoAr87WKi8jedcULlMteNZgl7DtFZ3ZE1Mmv74SwRgwJDWyc0A==}
+  /esm-loader-typescript@1.0.6:
+    resolution: {integrity: sha512-t+NqYYMAiZa+Ys/QDGzCv0vnKFPYZ8N6JIdqJNeWpNItEYFwZB6itVYzf3SzDMgqPxX5ZmPoOU9vv2CZg2JccA==}
     dependencies:
       create-esm-loader: 0.2.5
       npm-run-all: 4.1.5
