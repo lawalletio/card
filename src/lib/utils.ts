@@ -270,3 +270,41 @@ export const suuid2uuid = (suuid: string): string | null => {
     uuid.substring(20, 32)
   );
 };
+
+const ledgerPublicKey: string = requiredEnvVar('LEDGER_PUBLIC_KEY');
+
+export const fetchBalances = async (
+  readNDK: NDK,
+  pubkey: string,
+  tokens: string[],
+): Promise<{ [token: string]: number }> => {
+  const filter = {
+    authors: [ledgerPublicKey],
+    kinds: [31111],
+    '#d': tokens.map((token: string): string => {
+      return `balance:${token}:${pubkey}`;
+    }),
+  };
+  const balanceDTagRe = /^balance:[^:]+:[^:]+$/gi;
+  let balances: { [token: string]: number } = {};
+  return new Promise((resolve, reject) => {
+    readNDK
+      .subscribe(filter, { closeOnEose: true })
+      .on('event', (event: NostrEvent) => {
+        const token: string =
+          event.tags
+            .find((t) => balanceDTagRe.test(t[1]))
+            ?.map((t) => t[1])
+            .at(1) ?? '';
+        const amount: number = parseInt(
+          event.tags.find((t) => t[0] === 'amount')?.at(1) ?? '0',
+        );
+        if ('' !== token) {
+          balances[token] = amount;
+        }
+      })
+      .on('eose', () => resolve(balances))
+      .on('close', () => resolve(balances))
+      .on('error', reject);
+  });
+};
