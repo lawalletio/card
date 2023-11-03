@@ -165,7 +165,7 @@ const handleScan = async (req: ExtendedRequest, res: Response) => {
     .status(200)
     .send(
       JSON.stringify(response, (_, v) =>
-        typeof v === 'bigint' ? v.toString() : v,
+        typeof v === 'bigint' ? Number(v) : v,
       ),
     );
 };
@@ -256,7 +256,7 @@ const handleExtendedScan = async (req: ExtendedRequest, res: Response) => {
     .status(200)
     .send(
       JSON.stringify(response, (_, v) =>
-        typeof v === 'bigint' ? v.toString() : v,
+        typeof v === 'bigint' ? Number(v) : v,
       ),
     );
 };
@@ -296,7 +296,7 @@ const handleIdentityQuery = async (req: ExtendedRequest, res: Response) => {
     .status(200)
     .send(
       JSON.stringify(await resEvent.toNostrEvent(), (_, v) =>
-        typeof v === 'bigint' ? v.toString() : v,
+        typeof v === 'bigint' ? Number(v) : v,
       ),
     );
   return;

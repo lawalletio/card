@@ -146,7 +146,7 @@ const handler = async (req: ExtendedRequest, res: Response) => {
     .status(201)
     .send(
       JSON.stringify(await resEvent.toNostrEvent(), (_, v) =>
-        typeof v === 'bigint' ? v.toString() : v,
+        typeof v === 'bigint' ? Number(v) : v,
       ),
     );
 };
