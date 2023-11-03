@@ -119,18 +119,23 @@ const handler = async (req: ExtendedRequest, res: Response) => {
     if (e instanceof PrismaClientKnownRequestError) {
       switch (e.code) {
         case U_CONSTRAINT_VIOLATION:
-          res.status(409).send();
-          return;
+          ntag424 = (await req.context.prisma.ntag424.findFirst({
+            where: { cid: content.cid },
+          })) as Ntag424;
+          break;
         case DEPENDENCY_NOT_FOUND:
           res.status(422).send();
           return;
         default:
-          break;
+          error('Could not insert Ntag424: %O', e);
+          res.status(500).send();
+          return;
       }
+    } else {
+      error('Could not insert Ntag424: %O', e);
+      res.status(500).send();
+      return;
     }
-    error('Could not insert Ntag424: %O', e);
-    res.status(500).send();
-    return;
   }
   const resEvent = new NDKEvent(
     getWriteNDK(),
