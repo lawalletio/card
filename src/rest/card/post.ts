@@ -319,8 +319,11 @@ const handler = async (req: ExtendedRequest, res: Response) => {
       );
       res
         .status(201)
-        .json(await resEvent.toNostrEvent())
-        .send();
+        .send(
+          JSON.stringify(await resEvent.toNostrEvent(), (_, v) =>
+            typeof v === 'bigint' ? v.toString() : v,
+          ),
+        );
     })
     .catch((e) => {
       error('Unexpected error: %O', e);

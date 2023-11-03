@@ -144,8 +144,11 @@ const handler = async (req: ExtendedRequest, res: Response) => {
   await resEvent.sign();
   res
     .status(201)
-    .json(await resEvent.toNostrEvent())
-    .send();
+    .send(
+      JSON.stringify(await resEvent.toNostrEvent(), (_, v) =>
+        typeof v === 'bigint' ? v.toString() : v,
+      ),
+    );
 };
 
 export default handler;
