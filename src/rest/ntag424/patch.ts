@@ -42,14 +42,38 @@ const handler = async (req: ExtendedRequest, res: Response) => {
   );
   if (ntag424) {
     if (ntag424.otc ?? content.otc !== content.otc) {
-      log('NTAG already has OTC - OLD OTC: %s - NEW OTC: %s', ntag424.otc, content.otc);
-      res.status(409).json({ msg: 'NTAG already has OTC', old_otc: ntag424.otc, new_otc: content.otc }).send();
+      log(
+        'NTAG already has OTC - OLD OTC: %s - NEW OTC: %s',
+        ntag424.otc,
+        content.otc,
+      );
+      res
+        .status(409)
+        .json({
+          msg: 'NTAG already has OTC',
+          old_otc: ntag424.otc,
+          new_otc: content.otc,
+        })
+        .send();
       return;
     } else {
-      const oldNtag = await req.context.prisma.ntag424.findFirst({ where: { otc: content.otc } });
+      const oldNtag = await req.context.prisma.ntag424.findFirst({
+        where: { otc: content.otc },
+      });
       if (null !== oldNtag) {
-        log('OTC already has NTAG - OLD NTAG_CID: %s - NEW NTAG_CID: %s', oldNtag.cid, ntag424.cid);
-        res.status(409).json({ msg: 'OTC already has NTAG', old_ntag_cid: oldNtag.cid, new_ntag_cid: ntag424.cid }).send();
+        log(
+          'OTC already has NTAG - OLD NTAG_CID: %s - NEW NTAG_CID: %s',
+          oldNtag.cid,
+          ntag424.cid,
+        );
+        res
+          .status(409)
+          .json({
+            msg: 'OTC already has NTAG',
+            old_ntag_cid: oldNtag.cid,
+            new_ntag_cid: ntag424.cid,
+          })
+          .send();
         return;
       }
     }
