@@ -82,7 +82,7 @@ const generateTransactionEvent = async (
     defaultToken,
   ]);
   if ((limits[defaultToken] ?? 0) < msats) {
-    debug('Exeeded limit for token: %o', defaultToken);
+    debug('Exceeded limit for token: %o', defaultToken);
     return null;
   }
 
