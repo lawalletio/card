@@ -41,7 +41,7 @@ const handler = async (req: ExtendedRequest, res: Response) => {
     req.query.c as string,
   );
   if (ntag424) {
-    if (ntag424.otc ?? content.otc !== content.otc) {
+    if ((ntag424.otc ?? content.otc) !== content.otc) {
       log(
         'NTAG already has OTC - OLD OTC: %s - NEW OTC: %s',
         ntag424.otc,

@@ -325,7 +325,7 @@ const getHandler = (req: ExtendedRequest): Handler => {
     params: { [_: string]: string };
   } | null = parseLaWalletHeaders(req);
   return (laWalletHeaders?.params?.federationId ?? null) === federationId
-    ? (actionHandlers[laWalletHeaders?.action ?? ''] ?? actionHandlers[''])
+    ? actionHandlers[laWalletHeaders?.action ?? ''] ?? actionHandlers['']
     : handleScan;
 };
 
