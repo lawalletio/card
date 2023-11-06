@@ -292,6 +292,48 @@ const handleIdentityQuery = async (req: ExtendedRequest, res: Response) => {
   return;
 };
 
+const callbackUrl = (pubkey: string) =>
+  `${requiredEnvVar('LAWALLET_API_BASE_URL')}/lnurlp/${pubkey}/callback`;
+
+const handlePayRequest = async (req: ExtendedRequest, res: Response) => {
+  const ntag424 = await retrieveNtag424FromPC(
+    req.query.p as string | undefined,
+    req.query.c as string | undefined,
+  );
+  if (null === ntag424) {
+    res
+      .status(400)
+      .json({ status: 'ERROR', reason: 'Failed to retrieve card data' })
+      .send();
+    return;
+  }
+
+  const card: Card | null = await req.context.prisma.card.findUnique({
+    where: { ntag424Cid: ntag424.cid },
+  });
+  const holderPubKey: string | null | undefined = card?.holderPubKey;
+  if (!holderPubKey) {
+    res
+      .status(404)
+      .json({ status: 'ERROR', reason: 'Failed to retrieve card data' })
+      .send();
+    return;
+  }
+
+  res
+    .status(200)
+    .json({
+      callback: callbackUrl(holderPubKey),
+      maxSendable: 100000000000,
+      minSendable: 1000,
+      metadata: [['text/plain', 'lawallet']],
+      tag: 'laWallet:payRequest',
+      accountPubKey: holderPubKey,
+    })
+    .send();
+  return;
+};
+
 const handleError = async (req: ExtendedRequest, res: Response) => {
   res
     .status(400)
@@ -305,6 +347,7 @@ type Handler = (_req: ExtendedRequest, _res: Response) => void;
 const actionHandlers: { [_action: string]: Handler } = {
   extendedScan: handleExtendedScan,
   identityQuery: handleIdentityQuery,
+  payRequest: handlePayRequest,
   //
   '': handleError,
 };
