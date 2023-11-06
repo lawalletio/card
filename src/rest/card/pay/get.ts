@@ -49,44 +49,59 @@ const extractMsatsFromBolt11PR = (pr: string): number | null => {
   return msats;
 };
 
+enum TransactionError {
+  INVALID_K1_OR_PR = 'Invalid k1 or pr',
+  COULD_NOT_EXTRACT_TRANSACTION_AMOUNT = 'Could not extract transaction amount from pr',
+  COULD_NOT_PARSE_K1_SSUID = 'Could not parse k1 as SSUID',
+  COULD_NOT_FIND_PAYMENT_REQUEST_FOR_UUID = 'Could not find a payment request for UUID',
+  NO_CARD_HOLDER_FOR_UUID = 'No card holder for UUID',
+  INVALID_TAG_FOR_PAYMENT_REQUEST = 'Invalid tag for payment request',
+  INVALID_AMOUNT_FOR_PAYMENT_REQUEST = 'Invalid amount for payment request',
+  EXCEEDED_LIMIT = 'Limit reached',
+  EXCEEDED_BALANCE = 'Insufficient funds',
+  MISSING_DELEGATION = 'Card has no valid delegation',
+}
+
 const generateTransactionEvent = async (
   k1: string | undefined,
   pr: string | undefined,
-): Promise<NostrEvent | null> => {
+): Promise<{ ok: NostrEvent } | { error: TransactionError }> => {
   if (typeof k1 !== 'string' || typeof pr !== 'string') {
     debug('Invalid k1: %o or pr: %o', k1, pr);
-    return null;
+    return { error: TransactionError.INVALID_K1_OR_PR };
   }
 
   let msats: number | null = extractMsatsFromBolt11PR(pr);
   if (null === msats) {
     debug('Could not extract invoice amount');
-    return null;
+    return { error: TransactionError.COULD_NOT_EXTRACT_TRANSACTION_AMOUNT };
   }
 
   const paymentUuid: string | null = suuid2uuid(k1);
   if (null === paymentUuid) {
     debug('Could not parse k1 suuid: %o', k1);
-    return null;
+    return { error: TransactionError.COULD_NOT_PARSE_K1_SSUID };
   }
   const paymentRequest: PaymentRequestWithCard | null =
     await getExtantPaymentRequestByUuid(paymentUuid);
   if (null === paymentRequest) {
     debug('Could not find a payment request with uuid: %o', paymentUuid);
-    return null;
+    return { error: TransactionError.COULD_NOT_FIND_PAYMENT_REQUEST_FOR_UUID };
   }
   if (null === paymentRequest.card.holderPubKey) {
     debug('No card holder for payment request with uuid: %o', paymentUuid);
-    return null;
+    return { error: TransactionError.NO_CARD_HOLDER_FOR_UUID };
   }
   const paymentRequestResponse: ScanResponseBasic =
     paymentRequest.response as ScanResponseBasic;
-  if (
-    'withdrawRequest' !== paymentRequestResponse.tag ||
-    paymentRequestResponse.maxWithdrawable < msats
-  ) {
-    debug('Invalid tag or amount for payment request');
-    return null;
+  if ('withdrawRequest' !== paymentRequestResponse.tag) {
+    debug('Invalid tag for payment request');
+    return { error: TransactionError.INVALID_TAG_FOR_PAYMENT_REQUEST };
+  }
+
+  if (paymentRequestResponse.maxWithdrawable < msats) {
+    debug('Invalid amount for payment request');
+    return { error: TransactionError.INVALID_AMOUNT_FOR_PAYMENT_REQUEST };
   }
 
   const limits: { [_: string]: number } = await getLimits(paymentRequest.card, [
@@ -99,11 +114,11 @@ const generateTransactionEvent = async (
   );
   if ((limits[defaultToken] ?? 0) < msats) {
     debug('Exceeded limit for token: %o', defaultToken);
-    return null;
+    return { error: TransactionError.EXCEEDED_LIMIT };
   }
   if ((balance[defaultToken] ?? 0) < msats) {
     debug('Exceeded balance for token: %o', defaultToken);
-    return null;
+    return { error: TransactionError.EXCEEDED_BALANCE };
   }
 
   const delegation: Delegation | null = await getCardDelegation(
@@ -111,28 +126,30 @@ const generateTransactionEvent = async (
   );
   if (null === delegation) {
     debug('Card does not have delegation');
-    return null;
+    return { error: TransactionError.MISSING_DELEGATION };
   }
 
   addPaymentsForPaymentRequest(paymentRequest, { [defaultToken]: msats });
 
   return {
-    created_at: nowInSeconds(),
-    content: JSON.stringify({ tokens: { BTC: msats } }),
-    tags: [
-      ['p', ledgerPubKey],
-      ['p', btcGatewayPubKey],
-      ['t', 'internal-transaction-start'],
-      [
-        'delegation',
-        delegation.delegatorPubKey,
-        delegation.conditions,
-        delegation.delegationToken,
+    ok: {
+      created_at: nowInSeconds(),
+      content: JSON.stringify({ tokens: { BTC: msats } }),
+      tags: [
+        ['p', ledgerPubKey],
+        ['p', btcGatewayPubKey],
+        ['t', 'internal-transaction-start'],
+        [
+          'delegation',
+          delegation.delegatorPubKey,
+          delegation.conditions,
+          delegation.delegationToken,
+        ],
+        ['bolt11', pr],
       ],
-      ['bolt11', pr],
-    ],
-    kind: Kind.REGULAR,
-    pubkey: nostrPubKey,
+      kind: Kind.REGULAR,
+      pubkey: nostrPubKey,
+    },
   };
 };
 
@@ -140,20 +157,21 @@ const handler = async (req: ExtendedRequest, res: Response) => {
   const k1: string | undefined = req.query.k1 as string | undefined;
   const pr: string | undefined = req.query.pr as string | undefined;
 
-  const transactionEvent: NostrEvent | null = await generateTransactionEvent(
-    k1,
-    pr,
-  );
-  if (null === transactionEvent) {
+  const transactionEvent: { ok: NostrEvent } | { error: TransactionError } =
+    await generateTransactionEvent(k1, pr);
+  if ('error' in transactionEvent) {
     res
       .status(400)
-      .json({ status: 'ERROR', reason: 'Invalid transaction' })
+      .json({
+        status: 'ERROR',
+        reason: 'Invalid transaction: ' + transactionEvent.error,
+      })
       .send();
     return;
   }
 
   req.context.outbox
-    .publish(transactionEvent)
+    .publish(transactionEvent.ok)
     .then(() => {
       res.status(200).json({ status: 'OK' }).send();
     })
