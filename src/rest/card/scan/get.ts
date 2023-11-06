@@ -287,7 +287,10 @@ const handleIdentityQuery = async (req: ExtendedRequest, res: Response) => {
 
   const resEvent: NDKEvent = new NDKEvent(
     getWriteNDK(),
-    responseEvent('card-holder-response', JSON.stringify(card?.holder?.pubKey)),
+    responseEvent(
+      'card-holder-response',
+      JSON.stringify({ pubkey: card?.holder?.pubKey }),
+    ),
   );
 
   res
