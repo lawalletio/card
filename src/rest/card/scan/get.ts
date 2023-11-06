@@ -286,7 +286,7 @@ const handleIdentityQuery = async (req: ExtendedRequest, res: Response) => {
     .status(200)
     .json({
       tag: 'laWallet:identityQuery',
-      pubkey: card?.holder?.pubKey,
+      accountPubKey: card?.holder?.pubKey,
     })
     .send();
   return;
