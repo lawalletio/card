@@ -285,17 +285,16 @@ export const fetchBalances = async (
       return `balance:${token}:${pubkey}`;
     }),
   };
-  const balanceDTagRe = /^balance:[^:]+:[^:]+$/gi;
+  const balanceDTagRe = /^balance:(?<token>[^:]+):[^:]+$/i;
   let balances: { [token: string]: number } = {};
   return new Promise((resolve, reject) => {
     readNDK
       .subscribe(filter, { closeOnEose: true })
       .on('event', (event: NostrEvent) => {
+        const balanceTagValue: string =
+          event.tags.find((t) => 'd' === t[0])?.at(1) ?? '';
         const token: string =
-          event.tags
-            .find((t) => balanceDTagRe.test(t[1]))
-            ?.map((t) => t[1])
-            .at(1) ?? '';
+          balanceTagValue.match(balanceDTagRe)?.groups?.token ?? '';
         const amount: number = parseInt(
           event.tags.find((t) => t[0] === 'amount')?.at(1) ?? '0',
         );
