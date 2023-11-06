@@ -302,6 +302,33 @@ const handleIdentityQuery = async (req: ExtendedRequest, res: Response) => {
   return;
 };
 
+const handleError = async (req: ExtendedRequest, res: Response) => {
+  res
+    .status(400)
+    .json({ status: 'ERROR', reason: 'Unrecognized action' })
+    .send();
+  return;
+};
+
+type Handler = (_req: ExtendedRequest, _res: Response) => void;
+
+const actionHandlers: { [_action: string]: Handler } = {
+  extendedScan: handleExtendedScan,
+  identityQuery: handleIdentityQuery,
+  //
+  '': handleError,
+};
+
+const getHandler = (req: ExtendedRequest): Handler => {
+  const laWalletHeaders: {
+    action: string;
+    params: { [_: string]: string };
+  } | null = parseLaWalletHeaders(req);
+  return (laWalletHeaders?.params?.federationId ?? null) === federationId
+    ? (actionHandlers[laWalletHeaders?.action ?? ''] ?? actionHandlers[''])
+    : handleScan;
+};
+
 /**
  * Handle a "/scan" endpoint
  *
@@ -309,25 +336,7 @@ const handleIdentityQuery = async (req: ExtendedRequest, res: Response) => {
  * @param res  HTTP response to send
  */
 const handler = async (req: ExtendedRequest, res: Response) => {
-  const laWalletHeaders: {
-    action: string;
-    params: { [_: string]: string };
-  } | null = parseLaWalletHeaders(req);
-  if (laWalletHeaders?.params?.federationId ?? null === federationId) {
-    if (laWalletHeaders?.action ?? null === 'extendedScan') {
-      handleExtendedScan(req, res);
-    } else if (laWalletHeaders?.action ?? null === 'identityQuery') {
-      handleIdentityQuery(req, res);
-    } else {
-      res
-        .status(400)
-        .json({ status: 'ERROR', reason: 'Unrecognized action' })
-        .send();
-      return;
-    }
-  } else {
-    handleScan(req, res);
-  }
+  getHandler(req)(req, res);
 };
 
 export default handler;
