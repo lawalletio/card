@@ -148,7 +148,7 @@ export const setUpSubscriptions = async (
     return null;
   }
 
-  if (!lastHandledTracker) {
+  if (!lastHandledTracker && 0 < allFiles.length) {
     lastHandledTracker = new LastHandledTracker(readNdk, writeNDK, allFiles);
     await lastHandledTracker.fetchLastHandled();
   }
