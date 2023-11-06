@@ -12,9 +12,6 @@ import {
 } from '@lib/card';
 
 import { Card, Ntag424, Prisma } from '@prisma/client';
-import { NDKEvent } from '@nostr-dev-kit/ndk';
-import { getWriteNDK } from '@services/ndk';
-import { responseEvent } from '@lib/event';
 
 const log: Debugger = logger.extend('rest:card:scan');
 const debug: Debugger = log.extend('debug');
@@ -285,21 +282,13 @@ const handleIdentityQuery = async (req: ExtendedRequest, res: Response) => {
     return;
   }
 
-  const resEvent: NDKEvent = new NDKEvent(
-    getWriteNDK(),
-    responseEvent(
-      'card-holder-response',
-      JSON.stringify({ pubkey: card?.holder?.pubKey }),
-    ),
-  );
-
   res
     .status(200)
-    .send(
-      JSON.stringify(await resEvent.toNostrEvent(), (_, v) =>
-        typeof v === 'bigint' ? Number(v) : v,
-      ),
-    );
+    .json({
+      tag: 'laWallet:identityQuery',
+      pubkey: card?.holder?.pubKey,
+    })
+    .send();
   return;
 };
 
