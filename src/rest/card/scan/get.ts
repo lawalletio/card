@@ -19,9 +19,7 @@ import { responseEvent } from '@lib/event';
 const log: Debugger = logger.extend('rest:card:scan');
 const debug: Debugger = log.extend('debug');
 
-const federationId: string = requiredEnvVar(
-  'LAWALLET_FEDERATION_ID',
-).toLowerCase();
+const federationId: string = requiredEnvVar('LAWALLET_FEDERATION_ID');
 const apiBaseUrl: string = requiredEnvVar('LAWALLET_API_BASE_URL');
 
 const laWalletActionHeader: string = 'X-LaWallet-Action'.toLowerCase();
