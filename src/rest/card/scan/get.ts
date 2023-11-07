@@ -12,6 +12,7 @@ import {
 } from '@lib/card';
 
 import { Card, Ntag424, Prisma } from '@prisma/client';
+import { validateDelegationConditions } from '@lib/event';
 
 const log: Debugger = logger.extend('rest:card:scan');
 const debug: Debugger = log.extend('debug');
@@ -303,6 +304,170 @@ const handleIdentityQuery = async (req: ExtendedRequest, res: Response) => {
   return;
 };
 
+type InfoResponse = {
+  ntag424:
+    | {
+        ok: {
+          cid: string;
+          ctr: number;
+          ctrNew: number;
+          design: {
+            uuid: string;
+            name: string;
+          };
+        };
+      }
+    | {
+        error: string;
+      }
+    | null;
+  card:
+    | {
+        ok: {
+          uuid: string;
+          name: string;
+          description: string;
+          enabled: boolean;
+        };
+      }
+    | {
+        error: string;
+      }
+    | null;
+  holder:
+    | {
+        ok: {
+          pubKey: string;
+          delegations: {
+            kind: number | null;
+            since: string;
+            until: string;
+            isCurrent: boolean;
+            delegationConditions: string;
+            delegationToken: string;
+          }[];
+        };
+      }
+    | {
+        error: string;
+      }
+    | null;
+};
+
+const handleInfo = async (req: ExtendedRequest, res: Response) => {
+  const ntag424 = await retrieveNtag424FromPC(
+    req.query.p as string | undefined,
+    req.query.c as string | undefined,
+  );
+
+  let response: InfoResponse = {
+    ntag424: null,
+    card: null,
+    holder: null,
+  };
+
+  if ('error' in ntag424) {
+    response.ntag424 = { error: ntag424.error };
+    res
+      .status(200)
+      .json({
+        tag: 'laWallet:infoQuery',
+        info: response,
+      })
+      .send();
+    return;
+  }
+  response.ntag424 = {
+    ok: {
+      cid: ntag424.ok.cid,
+      ctr: ntag424.ok.ctr,
+      ctrNew: (await req.context.prisma.ntag424.findUnique({
+        where: { cid: ntag424.ok.cid },
+      }))!.ctr,
+      design: {
+        name: (await req.context.prisma.design.findUnique({
+          where: { uuid: ntag424.ok.designUuid },
+        }))!.name,
+        uuid: ntag424.ok.designUuid,
+      },
+    },
+  };
+
+  const card: Prisma.CardGetPayload<{ include: { holder: true } }> | null =
+    await req.context.prisma.card.findUnique({
+      where: { ntag424Cid: ntag424.ok.cid },
+      include: { holder: true },
+    });
+  if ((card?.holder ?? null) === null) {
+    response.card = { error: 'No card associated to this NTAG' };
+    res
+      .status(200)
+      .json({
+        tag: 'laWallet:infoQuery',
+        info: response,
+      })
+      .send();
+    return;
+  }
+  response.card = {
+    ok: {
+      description: card!.description,
+      enabled: card!.enabled,
+      name: card!.name,
+      uuid: card!.uuid,
+    },
+  };
+
+  if (
+    null ===
+    (await req.context.prisma.holder.findFirst({
+      where: { pubKey: card!.holder!.pubKey },
+    }))
+  ) {
+    response.holder = { error: 'No holder associated to this Card' };
+    res
+      .status(200)
+      .json({
+        tag: 'laWallet:infoQuery',
+        info: response,
+      })
+      .send();
+    return;
+  }
+
+  const delegations = await req.context.prisma.delegation.findMany({
+    where: {
+      delegatorPubKey: card!.holder!.pubKey,
+    },
+  });
+  response.holder = {
+    ok: {
+      pubKey: card!.holder!.pubKey,
+      delegations: (delegations ?? []).map((d) => {
+        const now = new Date();
+        const conditions = validateDelegationConditions(d.conditions);
+        return {
+          kind: conditions?.kind ?? null,
+          since: d.since.toUTCString(),
+          until: d.until.toUTCString(),
+          isCurrent: d.since <= now && now <= d.until,
+          delegationConditions: d.conditions,
+          delegationToken: d.delegationToken,
+        };
+      }),
+    },
+  };
+
+  res
+    .status(200)
+    .json({
+      tag: 'laWallet:infoQuery',
+      info: response,
+    })
+    .send();
+  return;
+};
+
 const callbackUrl = (pubkey: string) =>
   `${requiredEnvVar('LAWALLET_API_BASE_URL')}/lnurlp/${pubkey}/callback`;
 
@@ -366,6 +531,7 @@ type Handler = (_req: ExtendedRequest, _res: Response) => void;
 const actionHandlers: { [_action: string]: Handler } = {
   extendedScan: handleExtendedScan,
   identityQuery: handleIdentityQuery,
+  info: handleInfo,
   payRequest: handlePayRequest,
   //
   '': handleError,
