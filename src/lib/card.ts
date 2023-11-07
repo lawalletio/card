@@ -69,6 +69,17 @@ const sdmmac = async (
     .toLowerCase();
 };
 
+export enum Ntag424Error {
+  MALFORMED_P__NOT_A_32_CHAR_UPPERCASE_HEX_VALUE = 'Malformed p: not a 32-char uppercase hex value',
+  MALFORMED_P__DOES_NOT_START_WITH_0XC7 = 'Malformed p: does not start with 0xC7',
+  MALFORMED_P__COUNTER_VALUE_TOO_OLD = 'Malformed p: counter value too old',
+  //
+  MALFORMED_C__NOT_A_16_CHAR_UPPERCASE_HEX_VALUE = 'Malformed c: not a 16-char uppercase hex value',
+  MALFORMED_C__SDMMAC_MISMATCH = 'Malformed c: SDMMAC mismatch',
+  //
+  NO_SUITABLE_CARD_FOUND = 'No suitable card found',
+}
+
 /**
  * Given the "p" and "c" arguments in the scan url, retrieve the associated Ntag424 entity and update the card tap-counter
  *
@@ -79,20 +90,24 @@ const sdmmac = async (
 export const retrieveNtag424FromPC = async (
   p: string | undefined,
   c: string | undefined,
-): Promise<Ntag424 | null> => {
+): Promise<{ ok: Ntag424 } | { error: Ntag424Error }> => {
   if (typeof p !== 'string' || !/^[A-F0-9]{32}$/.test(p)) {
-    debug('Malformed p: not a 32-char uppercase hex value');
-    return null;
+    debug(Ntag424Error.MALFORMED_P__NOT_A_32_CHAR_UPPERCASE_HEX_VALUE);
+    return {
+      error: Ntag424Error.MALFORMED_P__NOT_A_32_CHAR_UPPERCASE_HEX_VALUE,
+    };
   }
   if (typeof c !== 'string' || !/^[A-F0-9]{16}$/.test(c)) {
-    debug('Malformed c: not a 16-char uppercase hex value');
-    return null;
+    debug(Ntag424Error.MALFORMED_C__NOT_A_16_CHAR_UPPERCASE_HEX_VALUE);
+    return {
+      error: Ntag424Error.MALFORMED_C__NOT_A_16_CHAR_UPPERCASE_HEX_VALUE,
+    };
   }
 
   const pBytes: Buffer = decrypt(k1, p);
   if (0xc7 !== pBytes[0]) {
-    debug('Malformed p: does not start with 0xC7');
-    return null;
+    debug(Ntag424Error.MALFORMED_P__DOES_NOT_START_WITH_0XC7);
+    return { error: Ntag424Error.MALFORMED_P__DOES_NOT_START_WITH_0XC7 };
   }
 
   const cidBytes: Buffer = pBytes.subarray(1, 8);
@@ -105,20 +120,20 @@ export const retrieveNtag424FromPC = async (
     where: { cid: cid, k1: k1 },
   });
   if (null === ntag424) {
-    debug('No suitable card found');
-    return null;
+    debug(Ntag424Error.NO_SUITABLE_CARD_FOUND);
+    return { error: Ntag424Error.NO_SUITABLE_CARD_FOUND };
   }
   const ctrOld: number = ntag424.ctr;
   const k2: string = ntag424.k2;
 
   if (ctrNew <= ctrOld) {
-    debug('Malformed p: counter too old');
-    return null;
+    debug(Ntag424Error.MALFORMED_P__COUNTER_VALUE_TOO_OLD);
+    return { error: Ntag424Error.MALFORMED_P__COUNTER_VALUE_TOO_OLD };
   }
 
   if (c.toLowerCase() !== (await sdmmac(k2, cidBytes, ctrBytes))) {
-    debug('Malformed c: SDMMAC mismatch');
-    return null;
+    debug(Ntag424Error.MALFORMED_C__SDMMAC_MISMATCH);
+    return { error: Ntag424Error.MALFORMED_C__SDMMAC_MISMATCH };
   }
 
   await prisma.ntag424.update({
@@ -126,7 +141,7 @@ export const retrieveNtag424FromPC = async (
     data: { ctr: ctrNew },
   });
 
-  return ntag424;
+  return { ok: ntag424 };
 };
 
 /**

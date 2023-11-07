@@ -82,21 +82,25 @@ const parseLaWalletHeaders = (
 
 const handleScan = async (req: ExtendedRequest, res: Response) => {
   // 1. check query params
-  const ntag424: Ntag424 | null = await retrieveNtag424FromPC(
-    req.query.p as string | undefined,
-    req.query.c as string | undefined,
-  );
-  if (null === ntag424) {
+  const ntag424: { ok: Ntag424 } | { error: string } =
+    await retrieveNtag424FromPC(
+      req.query.p as string | undefined,
+      req.query.c as string | undefined,
+    );
+  if ('error' in ntag424) {
     debug('Ntag 424 not found');
     res
       .status(400)
-      .json({ status: 'ERROR', reason: 'Failed to retrieve card data' })
+      .json({
+        status: 'ERROR',
+        reason: 'Failed to retrieve card data --- ' + ntag424.error,
+      })
       .send();
     return;
   }
   const card: Card | null = await req.context.prisma.card.findUnique({
     where: {
-      ntag424Cid: ntag424.cid,
+      ntag424Cid: ntag424.ok.cid,
     },
   });
   if (null === card) {
@@ -167,20 +171,24 @@ const handleScan = async (req: ExtendedRequest, res: Response) => {
 
 const handleExtendedScan = async (req: ExtendedRequest, res: Response) => {
   // 1. check query params
-  const ntag424: Ntag424 | null = await retrieveNtag424FromPC(
-    req.query.p as string | undefined,
-    req.query.c as string | undefined,
-  );
-  if (null === ntag424) {
+  const ntag424: { ok: Ntag424 } | { error: string } =
+    await retrieveNtag424FromPC(
+      req.query.p as string | undefined,
+      req.query.c as string | undefined,
+    );
+  if ('error' in ntag424) {
     res
       .status(400)
-      .json({ status: 'ERROR', reason: 'Failed to retrieve card data' })
+      .json({
+        status: 'ERROR',
+        reason: 'Failed to retrieve card data --- ' + ntag424.error,
+      })
       .send();
     return;
   }
   const card: Card | null = await req.context.prisma.card.findUnique({
     where: {
-      ntag424Cid: ntag424.cid,
+      ntag424Cid: ntag424.ok.cid,
     },
   });
   if (null === card) {
@@ -261,17 +269,20 @@ const handleIdentityQuery = async (req: ExtendedRequest, res: Response) => {
     req.query.p as string | undefined,
     req.query.c as string | undefined,
   );
-  if (null === ntag424) {
+  if ('error' in ntag424) {
     res
       .status(400)
-      .json({ status: 'ERROR', reason: 'Failed to retrieve card data' })
+      .json({
+        status: 'ERROR',
+        reason: 'Failed to retrieve card data --- ' + ntag424.error,
+      })
       .send();
     return;
   }
 
   const card: Prisma.CardGetPayload<{ include: { holder: true } }> | null =
     await req.context.prisma.card.findUnique({
-      where: { ntag424Cid: ntag424.cid },
+      where: { ntag424Cid: ntag424.ok.cid },
       include: { holder: true },
     });
   if ((card?.holder ?? null) === null) {
@@ -300,16 +311,19 @@ const handlePayRequest = async (req: ExtendedRequest, res: Response) => {
     req.query.p as string | undefined,
     req.query.c as string | undefined,
   );
-  if (null === ntag424) {
+  if ('error' in ntag424) {
     res
       .status(400)
-      .json({ status: 'ERROR', reason: 'Failed to retrieve card data' })
+      .json({
+        status: 'ERROR',
+        reason: 'Failed to retrieve card data --- ' + ntag424.error,
+      })
       .send();
     return;
   }
 
   const card: Card | null = await req.context.prisma.card.findUnique({
-    where: { ntag424Cid: ntag424.cid },
+    where: { ntag424Cid: ntag424.ok.cid },
   });
   const holderPubKey: string | null | undefined = card?.holderPubKey;
   if (!holderPubKey) {

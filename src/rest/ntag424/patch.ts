@@ -40,18 +40,18 @@ const handler = async (req: ExtendedRequest, res: Response) => {
     req.query.p as string,
     req.query.c as string,
   );
-  if (ntag424) {
-    if ((ntag424.otc ?? content.otc) !== content.otc) {
+  if (!('error' in ntag424)) {
+    if ((ntag424.ok.otc ?? content.otc) !== content.otc) {
       log(
         'NTAG already has OTC - OLD OTC: %s - NEW OTC: %s',
-        ntag424.otc,
+        ntag424.ok.otc,
         content.otc,
       );
       res
         .status(409)
         .json({
           msg: 'NTAG already has OTC',
-          old_otc: ntag424.otc,
+          old_otc: ntag424.ok.otc,
           new_otc: content.otc,
         })
         .send();
@@ -64,14 +64,14 @@ const handler = async (req: ExtendedRequest, res: Response) => {
         log(
           'OTC already has NTAG - OLD NTAG_CID: %s - NEW NTAG_CID: %s',
           oldNtag.cid,
-          ntag424.cid,
+          ntag424.ok.cid,
         );
         res
           .status(409)
           .json({
             msg: 'OTC already has NTAG',
             old_ntag_cid: oldNtag.cid,
-            new_ntag_cid: ntag424.cid,
+            new_ntag_cid: ntag424.ok.cid,
           })
           .send();
         return;
@@ -79,7 +79,7 @@ const handler = async (req: ExtendedRequest, res: Response) => {
     }
     await req.context.prisma.ntag424.update({
       data: { otc: content.otc },
-      where: { cid: ntag424.cid },
+      where: { cid: ntag424.ok.cid },
     });
     res.status(204).send();
   } else {
