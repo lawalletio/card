@@ -305,12 +305,19 @@ const handleIdentityQuery = async (req: ExtendedRequest, res: Response) => {
 };
 
 type InfoResponse = {
+  status: {
+    initialized: boolean;
+    associated: boolean;
+    activated: boolean;
+    hasDelegation: boolean;
+  };
   ntag424:
     | {
         ok: {
           cid: string;
           ctr: number;
           ctrNew: number;
+          otc: string | null;
           design: {
             uuid: string;
             name: string;
@@ -361,6 +368,12 @@ const handleInfo = async (req: ExtendedRequest, res: Response) => {
   );
 
   let response: InfoResponse = {
+    status: {
+      initialized: false,
+      associated: false,
+      activated: false,
+      hasDelegation: false,
+    },
     ntag424: null,
     card: null,
     holder: null,
@@ -368,95 +381,91 @@ const handleInfo = async (req: ExtendedRequest, res: Response) => {
 
   if ('error' in ntag424) {
     response.ntag424 = { error: ntag424.error };
-    res
-      .status(200)
-      .json({
-        tag: 'laWallet:infoQuery',
-        info: response,
-      })
-      .send();
-    return;
-  }
-  response.ntag424 = {
-    ok: {
-      cid: ntag424.ok.cid,
-      ctr: ntag424.ok.ctr,
-      ctrNew: (await req.context.prisma.ntag424.findUnique({
-        where: { cid: ntag424.ok.cid },
-      }))!.ctr,
-      design: {
-        name: (await req.context.prisma.design.findUnique({
-          where: { uuid: ntag424.ok.designUuid },
-        }))!.name,
-        uuid: ntag424.ok.designUuid,
+  } else {
+    response.ntag424 = {
+      ok: {
+        cid: ntag424.ok.cid,
+        ctr: ntag424.ok.ctr,
+        ctrNew: (await req.context.prisma.ntag424.findUnique({
+          where: { cid: ntag424.ok.cid },
+        }))!.ctr,
+        otc: ntag424.ok.otc,
+        design: {
+          name: (await req.context.prisma.design.findUnique({
+            where: { uuid: ntag424.ok.designUuid },
+          }))!.name,
+          uuid: ntag424.ok.designUuid,
+        },
       },
-    },
-  };
+    };
 
-  const card: Prisma.CardGetPayload<{ include: { holder: true } }> | null =
-    await req.context.prisma.card.findUnique({
-      where: { ntag424Cid: ntag424.ok.cid },
-      include: { holder: true },
-    });
-  if ((card?.holder ?? null) === null) {
-    response.card = { error: 'No card associated to this NTAG' };
-    res
-      .status(200)
-      .json({
-        tag: 'laWallet:infoQuery',
-        info: response,
-      })
-      .send();
-    return;
-  }
-  response.card = {
-    ok: {
-      description: card!.description,
-      enabled: card!.enabled,
-      name: card!.name,
-      uuid: card!.uuid,
-    },
-  };
+    const card: Prisma.CardGetPayload<{ include: { holder: true } }> | null =
+      await req.context.prisma.card.findUnique({
+        where: { ntag424Cid: ntag424.ok.cid },
+        include: { holder: true },
+      });
+    if ((card?.holder ?? null) === null) {
+      response.card = { error: 'No card associated to this NTAG' };
+    } else {
+      response.card = {
+        ok: {
+          description: card!.description,
+          enabled: card!.enabled,
+          name: card!.name,
+          uuid: card!.uuid,
+        },
+      };
 
-  if (
-    null ===
-    (await req.context.prisma.holder.findFirst({
-      where: { pubKey: card!.holder!.pubKey },
-    }))
-  ) {
-    response.holder = { error: 'No holder associated to this Card' };
-    res
-      .status(200)
-      .json({
-        tag: 'laWallet:infoQuery',
-        info: response,
-      })
-      .send();
-    return;
-  }
-
-  const delegations = await req.context.prisma.delegation.findMany({
-    where: {
-      delegatorPubKey: card!.holder!.pubKey,
-    },
-  });
-  response.holder = {
-    ok: {
-      pubKey: card!.holder!.pubKey,
-      delegations: (delegations ?? []).map((d) => {
-        const now = new Date();
-        const conditions = validateDelegationConditions(d.conditions);
-        return {
-          kind: conditions?.kind ?? null,
-          since: d.since.toUTCString(),
-          until: d.until.toUTCString(),
-          isCurrent: d.since <= now && now <= d.until,
-          delegationConditions: d.conditions,
-          delegationToken: d.delegationToken,
+      if (
+        null ===
+        (await req.context.prisma.holder.findFirst({
+          where: { pubKey: card!.holder!.pubKey },
+        }))
+      ) {
+        response.holder = { error: 'No holder associated to this Card' };
+      } else {
+        const delegations = await req.context.prisma.delegation.findMany({
+          where: {
+            delegatorPubKey: card!.holder!.pubKey,
+          },
+        });
+        response.holder = {
+          ok: {
+            pubKey: card!.holder!.pubKey,
+            delegations: (delegations ?? []).map((d) => {
+              const now = new Date();
+              const conditions = validateDelegationConditions(d.conditions);
+              return {
+                kind: conditions?.kind ?? null,
+                since: d.since.toUTCString(),
+                until: d.until.toUTCString(),
+                isCurrent: d.since <= now && now <= d.until,
+                delegationConditions: d.conditions,
+                delegationToken: d.delegationToken,
+              };
+            }),
+          },
         };
-      }),
-    },
-  };
+      }
+    }
+  }
+
+  if ('ok' in response.ntag424) {
+    response.status.initialized = true;
+    if (null !== response.ntag424.ok.otc) {
+      response.status.associated = true;
+      if (response.holder !== null && 'ok' in response.holder) {
+        response.status.activated = true;
+        if (
+          response.holder.ok.delegations.some((d) => {
+            return d.isCurrent;
+          })
+        ) {
+          response.status.hasDelegation = true;
+        }
+      }
+    }
+  }
 
   res
     .status(200)
