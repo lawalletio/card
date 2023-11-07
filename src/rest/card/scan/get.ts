@@ -331,7 +331,7 @@ const handlePayRequest = async (req: ExtendedRequest, res: Response) => {
       metadata: [['text/plain', 'lawallet']],
       tag: 'laWallet:payRequest',
       accountPubKey: holderPubKey,
-      allowNostr: true,
+      allowsNostr: true,
       federationId: requiredEnvVar('LAWALLET_FEDERATION_ID'),
       nostrPubkey: requiredEnvVar('BTC_GATEWAY_PUBLIC_KEY'),
     })
