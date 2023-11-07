@@ -46,17 +46,29 @@ export function parseEventBody(
   expectedPubkey?: string,
 ): NostrEvent | null {
   debug('Received event: %O, expectedPubkey: %O', event, expectedPubkey);
-  if (
-    !validateEvent(event) ||
-    !verifySignature(event) ||
-    !validateNip26(event) ||
-    event.created_at + MAX_EVENT_AGE < nowInSeconds() ||
-    (expectedPubkey && event.pubkey !== expectedPubkey)
-  ) {
-    log('Received invalid nostr event %s', event.id);
-    return null;
+  if (!validateEvent(event)) {
+    log('Event validation failed');
+  } else if (!verifySignature(event)) {
+    log('Signature validation failed');
+  } else if (!validateNip26(event)) {
+    log('NIP-26 validation failed');
+  } else if (event.created_at + MAX_EVENT_AGE < nowInSeconds()) {
+    log(
+      'Event age validation failed --- event.created_at + MAX_EVENT_AGE = %O / nowInSeconds() = %O',
+      event.created_at + MAX_EVENT_AGE,
+      nowInSeconds(),
+    );
+  } else if (expectedPubkey && event.pubkey !== expectedPubkey) {
+    log(
+      'Expected pubkey mismatch --- expectedPubkey = %O / event.pubkey = ',
+      expectedPubkey,
+      event.pubkey,
+    );
+  } else {
+    return event;
   }
-  return event;
+  log('Received invalid nostr event %s', event.id);
+  return null;
 }
 
 /**

@@ -150,13 +150,19 @@ const validateContent = (content: string): PayReq | null => {
     !('k1' in req && 'pubkey' in req && 'tokens' in req) ||
     typeof req.tokens !== 'object'
   ) {
+    log('Malformed event content, error: %O', req);
     return null;
   }
   for (const key in req.tokens) {
     if (typeof key !== 'string') {
+      log('Non-string token name: %O', key);
       return null;
     }
     if (typeof req.tokens[key as keyof typeof req.tokens] !== 'number') {
+      log(
+        'Non-numeric token value: %O',
+        req.tokens[key as keyof typeof req.tokens],
+      );
       return null;
     }
   }
@@ -168,7 +174,10 @@ const handler = async (req: ExtendedRequest, res: Response) => {
   if (null === reqEvent) {
     res
       .status(400)
-      .json({ status: 'ERROR', reason: 'Invalid transaction' })
+      .json({
+        status: 'ERROR',
+        reason: 'Invalid transaction --- Event validation failed',
+      })
       .send();
     return;
   }
@@ -176,7 +185,10 @@ const handler = async (req: ExtendedRequest, res: Response) => {
   if (null === content) {
     res
       .status(400)
-      .json({ status: 'ERROR', reason: 'Invalid transaction' })
+      .json({
+        status: 'ERROR',
+        reason: 'Invalid transaction --- Content validation failed',
+      })
       .send();
     return;
   }
@@ -188,7 +200,10 @@ const handler = async (req: ExtendedRequest, res: Response) => {
   if (null === transactionEvent) {
     res
       .status(400)
-      .json({ status: 'ERROR', reason: 'Invalid transaction' })
+      .json({
+        status: 'ERROR',
+        reason: 'Invalid transaction --- Transaction generation failed',
+      })
       .send();
     return;
   }
