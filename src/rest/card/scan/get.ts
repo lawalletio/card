@@ -12,9 +12,6 @@ import {
 } from '@lib/card';
 
 import { Card, Ntag424, Prisma } from '@prisma/client';
-import { NDKEvent } from '@nostr-dev-kit/ndk';
-import { getWriteNDK } from '@services/ndk';
-import { responseEvent } from '@lib/event';
 
 const log: Debugger = logger.extend('rest:card:scan');
 const debug: Debugger = log.extend('debug');
@@ -285,21 +282,60 @@ const handleIdentityQuery = async (req: ExtendedRequest, res: Response) => {
     return;
   }
 
-  const resEvent: NDKEvent = new NDKEvent(
-    getWriteNDK(),
-    responseEvent(
-      'card-holder-response',
-      JSON.stringify({ pubkey: card?.holder?.pubKey }),
-    ),
+  res
+    .status(200)
+    .json({
+      tag: 'laWallet:identityQuery',
+      accountPubKey: card?.holder?.pubKey,
+    })
+    .send();
+  return;
+};
+
+const callbackUrl = (pubkey: string) =>
+  `${requiredEnvVar('LAWALLET_API_BASE_URL')}/lnurlp/${pubkey}/callback`;
+
+const handlePayRequest = async (req: ExtendedRequest, res: Response) => {
+  const ntag424 = await retrieveNtag424FromPC(
+    req.query.p as string | undefined,
+    req.query.c as string | undefined,
   );
+  if (null === ntag424) {
+    res
+      .status(400)
+      .json({ status: 'ERROR', reason: 'Failed to retrieve card data' })
+      .send();
+    return;
+  }
+
+  const card: Card | null = await req.context.prisma.card.findUnique({
+    where: { ntag424Cid: ntag424.cid },
+  });
+  const holderPubKey: string | null | undefined = card?.holderPubKey;
+  if (!holderPubKey) {
+    res
+      .status(404)
+      .json({ status: 'ERROR', reason: 'Failed to retrieve card data' })
+      .send();
+    return;
+  }
 
   res
     .status(200)
-    .send(
-      JSON.stringify(await resEvent.toNostrEvent(), (_, v) =>
-        typeof v === 'bigint' ? Number(v) : v,
-      ),
-    );
+    .json({
+      status: 'OK',
+      commentAllowed: 255,
+      callback: callbackUrl(holderPubKey),
+      maxSendable: 100000000000,
+      minSendable: 1000,
+      metadata: [['text/plain', 'lawallet']],
+      tag: 'laWallet:payRequest',
+      accountPubKey: holderPubKey,
+      allowsNostr: true,
+      federationId: requiredEnvVar('LAWALLET_FEDERATION_ID'),
+      nostrPubkey: requiredEnvVar('BTC_GATEWAY_PUBLIC_KEY'),
+    })
+    .send();
   return;
 };
 
@@ -316,6 +352,7 @@ type Handler = (_req: ExtendedRequest, _res: Response) => void;
 const actionHandlers: { [_action: string]: Handler } = {
   extendedScan: handleExtendedScan,
   identityQuery: handleIdentityQuery,
+  payRequest: handlePayRequest,
   //
   '': handleError,
 };
