@@ -1,7 +1,11 @@
 import { Debugger } from 'debug';
 import type { Response } from 'express';
 
-import { parseEventBody, responseEvent } from '@lib/event';
+import {
+  parseEventBody,
+  responseEvent,
+  validateDelegationConditions,
+} from '@lib/event';
 import { logger, nowInSeconds, requiredEnvVar } from '@lib/utils';
 import type { ExtendedRequest } from '@type/request';
 import { Holder, Prisma, PrismaClient } from '@prisma/client';
@@ -23,64 +27,6 @@ type CardActivateReq = {
   otc: string;
   delegation: DelegationReq;
 };
-
-/**
- * Parse and validate a nip26 conditions string
- *
- * @return the kind, since and until if the conditions is valid, null
- * otherwise
- */
-function validateDelegationConditions(
-  conditions: string,
-): { kind: number; since: number; until: number } | null {
-  const rKind: RegExp = /^kind=(?<kind>[1-9][0-9]*)$/g;
-  const rSince: RegExp = /^created_at>(?<ts>[1-9][0-9]*)$/g;
-  const rUntil: RegExp = /^created_at<(?<ts>[1-9][0-9]*)$/g;
-
-  let kind: number | null = null;
-  let since: number | null = null;
-  let until: number | null = null;
-
-  for (const part of conditions.split('&')) {
-    const mKind: RegExpExecArray | null = rKind.exec(part);
-    const mSince: RegExpExecArray | null = rSince.exec(part);
-    const mUntil: RegExpExecArray | null = rUntil.exec(part);
-
-    if (null !== mKind) {
-      if (null === kind) {
-        kind = parseInt(mKind.groups?.kind ?? '', 10);
-      } else {
-        return null;
-      }
-    } else if (null !== mSince) {
-      if (null === since) {
-        since = parseInt(mSince.groups?.ts ?? '', 10);
-      } else {
-        return null;
-      }
-    } else if (null !== mUntil) {
-      if (null === until) {
-        until = parseInt(mUntil.groups?.ts ?? '', 10);
-      } else {
-        return null;
-      }
-    }
-  }
-
-  if (
-    null === kind ||
-    null === since ||
-    null === until ||
-    isNaN(kind) ||
-    isNaN(since) ||
-    isNaN(until) ||
-    until <= since
-  ) {
-    return null;
-  }
-
-  return { kind, since, until };
-}
 
 /**
  * Validates that the gien delegation is valid for the delegator,
