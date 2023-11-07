@@ -323,12 +323,17 @@ const handlePayRequest = async (req: ExtendedRequest, res: Response) => {
   res
     .status(200)
     .json({
+      status: 'OK',
+      commentAllowed: 255,
       callback: callbackUrl(holderPubKey),
       maxSendable: 100000000000,
       minSendable: 1000,
       metadata: [['text/plain', 'lawallet']],
       tag: 'laWallet:payRequest',
       accountPubKey: holderPubKey,
+      allowNostr: true,
+      federationId: requiredEnvVar('LAWALLET_FEDERATION_ID'),
+      nostrPubkey: requiredEnvVar('BTC_GATEWAY_PUBLIC_KEY'),
     })
     .send();
   return;
