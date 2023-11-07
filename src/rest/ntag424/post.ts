@@ -18,7 +18,7 @@ const DEPENDENCY_NOT_FOUND = 'P2025';
 type CardInitRequest = {
   cid: string;
   ctr: number;
-  design: { name: string } | { uuid: string };
+  designUuid: string;
 };
 
 /**
@@ -36,23 +36,18 @@ function parseCardInitRequest(content: string): CardInitRequest {
 
   const cid: string | null = req?.cid ?? null;
   const ctr: number | null = req?.ctr ?? null;
-  const designName: string | null = req?.design?.name ?? null;
   const designUuid: string | null = req?.design?.uuid ?? null;
 
   if (
     null === cid ||
     null === ctr ||
-    (null === designName &&
-      (null === designUuid || !designUuid.match(uuidRegex)))
+    null === designUuid ||
+    !designUuid.match(uuidRegex)
   ) {
     throw new Error('Not a valid content');
   }
 
-  if (null === designName) {
-    return { cid, ctr, design: { uuid: designUuid as string } };
-  } else {
-    return { cid, ctr, design: { name: designName } };
-  }
+  return { cid, ctr, designUuid };
 }
 
 /**
@@ -61,8 +56,8 @@ function parseCardInitRequest(content: string): CardInitRequest {
 function createNtag424({
   cid,
   ctr,
-  design,
-}: CardInitRequest): Prisma.Ntag424CreateInput {
+  designUuid,
+}: CardInitRequest): Prisma.Ntag424UncheckedCreateInput {
   return {
     cid,
     k0: randomHex(16).toLowerCase(),
@@ -71,7 +66,7 @@ function createNtag424({
     k3: randomHex(16).toLowerCase(),
     k4: randomHex(16).toLowerCase(),
     ctr,
-    design: { connect: design },
+    designUuid,
   };
 }
 
