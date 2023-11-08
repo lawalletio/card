@@ -33,9 +33,22 @@ model Holder {
   cards            Card[]             @relation
   delegations      Delegation[]       @relation
   trustedMerchants TrustedMerchants[] @relation
+  resetToken       ResetToken?        @relation
 
   @@id([pubKey])
   @@map("holders")
+}
+
+model ResetToken {
+  holderPubKey String   @map("holder_pub_key")
+  createdAt    DateTime @default(now()) @map("created_at")
+  token        String   @map("token")
+
+  holder Holder @relation(fields: [holderPubKey], references: [pubKey], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([holderPubKey])
+  @@unique([token])
+  @@map("reset_tokens")
 }
 
 model Delegation {
