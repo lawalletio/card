@@ -38,9 +38,7 @@ const getPubkeyFromPC = async (
 
 const handler = async (req: ExtendedRequest, res: Response) => {
   if (
-    !['target_p', 'target_c', 'admin_p', 'admin_c'].every(
-      (t) => t in req.body.json,
-    )
+    !['target_p', 'target_c', 'admin_p', 'admin_c'].every((t) => t in req.body)
   ) {
     res
       .status(400)
@@ -48,7 +46,7 @@ const handler = async (req: ExtendedRequest, res: Response) => {
       .send();
     return;
   }
-  const resetRequest: ResetRequest = req.body.json as ResetRequest;
+  const resetRequest: ResetRequest = req.body as ResetRequest;
 
   const adminPubkey: { ok: string } | { error: string } = await getPubkeyFromPC(
     req.context.prisma,
