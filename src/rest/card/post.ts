@@ -4,14 +4,14 @@ import type { Response } from 'express';
 import {
   parseEventBody,
   responseEvent,
+  validateDelegation,
   validateDelegationConditions,
 } from '@lib/event';
-import { logger, nowInSeconds, requiredEnvVar } from '@lib/utils';
+import { logger, requiredEnvVar } from '@lib/utils';
 import type { ExtendedRequest } from '@type/request';
 import { Holder, Prisma, PrismaClient } from '@prisma/client';
 import { NDKEvent } from '@nostr-dev-kit/ndk';
 import { getWriteNDK } from '@services/ndk';
-import { nip26 } from 'nostr-tools';
 
 const log: Debugger = logger.extend('rest:card:post');
 const error: Debugger = log.extend('error');
@@ -27,30 +27,6 @@ type CardActivateReq = {
   otc: string;
   delegation: DelegationReq;
 };
-
-/**
- * Validates that the gien delegation is valid for the delegator,
- * conditions and delegatee.
- */
-function validateDelegation(
-  delegatorPubKey: string,
-  delegation: DelegationReq,
-): boolean {
-  const event = {
-    kind: 1112,
-    tags: [
-      [
-        'delegation',
-        delegatorPubKey,
-        delegation.conditions,
-        delegation.delegationToken,
-      ],
-    ],
-    created_at: nowInSeconds(),
-    pubkey: requiredEnvVar('NOSTR_PUBLIC_KEY'),
-  };
-  return nip26.getDelegator(event) === delegatorPubKey;
-}
 
 /**
  * Return the default limits from environment variable
@@ -207,7 +183,13 @@ const handler = async (req: ExtendedRequest, res: Response) => {
     res.status(422).send();
     return;
   }
-  if (!validateDelegation(reqEvent.pubkey, content.delegation)) {
+  if (
+    !validateDelegation(
+      reqEvent.pubkey,
+      content.delegation.conditions,
+      content.delegation.delegationToken,
+    )
+  ) {
     log(
       'Received invalid delegation %O for pubkey %s',
       content.delegation,

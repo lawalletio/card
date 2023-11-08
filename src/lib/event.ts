@@ -152,3 +152,23 @@ export function validateDelegationConditions(
 
   return { kind, since, until };
 }
+
+/**
+ * Validates that the given delegation is valid for the delegator,
+ * conditions and delegatee.
+ */
+export function validateDelegation(
+  delegatorPubKey: string,
+  delegationConditions: string,
+  delegationToken: string,
+): boolean {
+  const event = {
+    kind: 1112,
+    tags: [
+      ['delegation', delegatorPubKey, delegationConditions, delegationToken],
+    ],
+    created_at: nowInSeconds(),
+    pubkey: requiredEnvVar('NOSTR_PUBLIC_KEY'),
+  };
+  return nip26.getDelegator(event) === delegatorPubKey;
+}
