@@ -459,7 +459,7 @@ const handleInfo = async (req: ExtendedRequest, res: Response) => {
   res
     .status(200)
     .json({
-      tag: 'laWallet:infoQuery',
+      tag: 'laWallet:info',
       info: response,
     })
     .send();
