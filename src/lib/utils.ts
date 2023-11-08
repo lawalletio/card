@@ -2,6 +2,7 @@ import debug from 'debug';
 import { Router } from 'express';
 import { globSync } from 'glob';
 import NDK, { NostrEvent } from '@nostr-dev-kit/ndk';
+import { v4 as uuidv4 } from 'uuid';
 
 import Path from 'path';
 import { Context } from '@type/request';
@@ -269,6 +270,10 @@ export const suuid2uuid = (suuid: string): string | null => {
     '-' +
     uuid.substring(20, 32)
   );
+};
+
+export const generateSuuid = (): string => {
+  return uuid2suuid(uuidv4()) as string;
 };
 
 const ledgerPublicKey: string = requiredEnvVar('LEDGER_PUBLIC_KEY');
