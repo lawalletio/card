@@ -304,6 +304,40 @@ const handleIdentityQuery = async (req: ExtendedRequest, res: Response) => {
   return;
 };
 
+type MaybeNull<T> = T | null;
+type MaybeError<T> = { ok: T } | { error: string };
+type MaybeErrorNull<T> = MaybeNull<MaybeError<T>>;
+
+type InfoResponseNtag424 = {
+  cid: string;
+  ctr: number;
+  ctrNew: number;
+  otc: string | null;
+  design: {
+    uuid: string;
+    name: string;
+  };
+};
+
+type InfoResponseCard = {
+  uuid: string;
+  name: string;
+  description: string;
+  enabled: boolean;
+};
+
+type InfoResponseHolder = {
+  pubKey: string;
+  delegations: {
+    kind: number | null;
+    since: string;
+    until: string;
+    isCurrent: boolean;
+    delegationConditions: string;
+    delegationToken: string;
+  }[];
+};
+
 type InfoResponse = {
   status: {
     initialized: boolean;
@@ -311,54 +345,9 @@ type InfoResponse = {
     activated: boolean;
     hasDelegation: boolean;
   };
-  ntag424:
-    | {
-        ok: {
-          cid: string;
-          ctr: number;
-          ctrNew: number;
-          otc: string | null;
-          design: {
-            uuid: string;
-            name: string;
-          };
-        };
-      }
-    | {
-        error: string;
-      }
-    | null;
-  card:
-    | {
-        ok: {
-          uuid: string;
-          name: string;
-          description: string;
-          enabled: boolean;
-        };
-      }
-    | {
-        error: string;
-      }
-    | null;
-  holder:
-    | {
-        ok: {
-          pubKey: string;
-          delegations: {
-            kind: number | null;
-            since: string;
-            until: string;
-            isCurrent: boolean;
-            delegationConditions: string;
-            delegationToken: string;
-          }[];
-        };
-      }
-    | {
-        error: string;
-      }
-    | null;
+  ntag424: MaybeErrorNull<InfoResponseNtag424>;
+  card: MaybeErrorNull<InfoResponseCard>;
+  holder: MaybeErrorNull<InfoResponseHolder>;
 };
 
 const handleInfo = async (req: ExtendedRequest, res: Response) => {
