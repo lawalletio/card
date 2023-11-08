@@ -312,3 +312,14 @@ export const fetchBalances = async (
       .on('error', reject);
   });
 };
+
+export const jsonParseOrNull = (
+  text: string,
+  reviver?: (this: any, key: string, value: any) => any,
+): any => {
+  try {
+    return JSON.parse(text, reviver);
+  } catch (e) {
+    return null;
+  }
+};
