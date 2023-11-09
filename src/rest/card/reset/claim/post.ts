@@ -9,6 +9,7 @@ import {
 import {
   fetchBalances,
   jsonParseOrNull,
+  logger,
   nowInSeconds,
   requiredEnvVar,
 } from '@lib/utils';
@@ -23,6 +24,10 @@ import {
 } from '@prisma/client';
 import { NDKEvent, NostrEvent } from '@nostr-dev-kit/ndk';
 import { getReadNDK, getWriteNDK } from '@services/ndk';
+import { Debugger } from 'debug';
+
+const log: Debugger = logger.extend('rest:card:reset:claim:post');
+const debug: Debugger = log.extend('debug');
 
 const RESET_EXPIRY_SECONDS: number = 180; // 3 minutes
 
@@ -77,7 +82,7 @@ async function buildIdentityProviderTransferEvent(
   newPubkey: string,
   oldDelegation: DelegationReq,
 ): Promise<NostrEvent> {
-  return new NDKEvent(getWriteNDK(), {
+  const event: NDKEvent = new NDKEvent(getWriteNDK(), {
     pubkey: nostrPubKey,
     tags: [
       ['p', newPubkey],
@@ -92,7 +97,9 @@ async function buildIdentityProviderTransferEvent(
     content: '',
     created_at: nowInSeconds(),
     kind: Kind.REGULAR,
-  }).toNostrEvent();
+  });
+  await event.sign();
+  return event.toNostrEvent();
 }
 
 async function callIdentityProvider(
@@ -109,13 +116,23 @@ async function callIdentityProvider(
   const identityProviderResponse = await fetch(apiUrl, {
     method: 'POST',
     body: JSON.stringify(
-      buildIdentityProviderTransferEvent(oldPubkey, newPubkey, oldDelegation),
+      await buildIdentityProviderTransferEvent(
+        oldPubkey,
+        newPubkey,
+        oldDelegation,
+      ),
     ),
     headers: {
       'Content-type': 'application/json',
     },
   });
   if (!identityProviderResponse.ok) {
+    debug(
+      'Received error from identity provider: %s - %s: %O',
+      identityProviderResponse.status,
+      identityProviderResponse.statusText,
+      await identityProviderResponse.text(),
+    );
     return {
       error: `non-2xx response from identity provider: ${identityProviderResponse.status}`,
     };
