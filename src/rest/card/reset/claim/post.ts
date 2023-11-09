@@ -281,24 +281,9 @@ const handler = async (req: ExtendedRequest, res: Response) => {
     data: { holderPubKey: newHolder.pubKey },
   });
 
-  // call identityprovider
-  const identityProviderResponse: { name: string } | { error: string } =
-    await callIdentityProvider(
-      oldHolder.pubKey,
-      newHolder.pubKey,
-      oldHolderDelegation,
-    );
-  if ('error' in identityProviderResponse) {
-    res
-      .status(400)
-      .send(
-        `Identity provider failed to reset identity: ${identityProviderResponse.error}`,
-      );
-    return;
-  }
-
   let fundsTransferOK = false;
   let identityTransferOK = false;
+  let identityTransferPropagationOK = false;
 
   // transfer funds
   try {
@@ -353,11 +338,23 @@ const handler = async (req: ExtendedRequest, res: Response) => {
     // NOP
   }
 
+  // call identityprovider
+  const identityProviderResponse: { name: string } | { error: string } =
+    await callIdentityProvider(
+      oldHolder.pubKey,
+      newHolder.pubKey,
+      oldHolderDelegation,
+    );
+  if (!('error' in identityProviderResponse)) {
+    identityTransferPropagationOK = true;
+  }
+
   res.status(201).send(
     JSON.stringify({
       ...identityProviderResponse,
       fundsTransferOK,
       identityTransferOK,
+      identityTransferPropagationOK,
     }),
   );
   return;
