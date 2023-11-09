@@ -164,11 +164,11 @@ export const generatePC = async (
   }
 
   if (
-    !/^[a-f0-9]{32}$/gi.test(k2) ||
-    !/^[a-f0-9]{14}$/gi.test(cid) ||
+    !/^[a-f0-9]{32}$/i.test(k2) ||
+    !/^[a-f0-9]{14}$/i.test(cid) ||
     ctr < 0 ||
     0xffffff < ctr ||
-    !/^[a-f0-9]{10}$/gi.test(pad)
+    !/^[a-f0-9]{10}$/i.test(pad)
   ) {
     return null;
   }

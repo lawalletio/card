@@ -65,7 +65,7 @@ const parseLaWalletHeaders = (
   }
 
   const action: string = (req.headers[laWalletActionHeader] as string).trim();
-  if (!/^[a-z0-9.-]+$/gi.test(action)) {
+  if (!/^[a-z0-9.-]+$/i.test(action)) {
     return null;
   }
 
