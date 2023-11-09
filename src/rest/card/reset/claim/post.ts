@@ -198,6 +198,8 @@ function parseResetClaimReq(
  *  }
  */
 const handler = async (req: ExtendedRequest, res: Response) => {
+  debug(`Request body as JSON: ${JSON.stringify(req.body)}`);
+
   const now: number = nowInSeconds();
 
   // validate input

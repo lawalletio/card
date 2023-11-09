@@ -1,12 +1,17 @@
+import { Debugger } from 'debug';
+
 import type { Response } from 'express';
 import type { ExtendedRequest } from '@type/request';
 
 import { Card, Ntag424, PrismaClient } from '@prisma/client';
 
 import { retrieveNtag424FromPC } from '@lib/card';
-import { requiredEnvVar, generateSuuid } from '@lib/utils';
+import { requiredEnvVar, generateSuuid, logger } from '@lib/utils';
 
 const adminPubkeys: string[] = requiredEnvVar('ADMIN_PUBKEYS').split(':');
+
+const log: Debugger = logger.extend('rest:card:reset:request');
+const debug: Debugger = log.extend('debug');
 
 type ResetRequest = {
   target_p: string;
@@ -37,6 +42,7 @@ const getPubkeyFromPC = async (
 };
 
 const handler = async (req: ExtendedRequest, res: Response) => {
+  debug(`Request body as JSON: ${JSON.stringify(req.body)}`);
   if (
     !['target_p', 'target_c', 'admin_p', 'admin_c'].every((t) => t in req.body)
   ) {
