@@ -82,7 +82,7 @@ async function buildIdentityProviderTransferEvent(
   newPubkey: string,
   oldDelegation: DelegationReq,
 ): Promise<NostrEvent> {
-  return new NDKEvent(getWriteNDK(), {
+  const event: NDKEvent = new NDKEvent(getWriteNDK(), {
     pubkey: nostrPubKey,
     tags: [
       ['p', newPubkey],
@@ -97,7 +97,9 @@ async function buildIdentityProviderTransferEvent(
     content: '',
     created_at: nowInSeconds(),
     kind: Kind.REGULAR,
-  }).toNostrEvent();
+  });
+  await event.sign();
+  return event.toNostrEvent();
 }
 
 async function callIdentityProvider(
