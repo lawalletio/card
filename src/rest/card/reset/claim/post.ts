@@ -9,6 +9,7 @@ import {
 import {
   fetchBalances,
   jsonParseOrNull,
+  logger,
   nowInSeconds,
   requiredEnvVar,
 } from '@lib/utils';
@@ -23,6 +24,10 @@ import {
 } from '@prisma/client';
 import { NDKEvent, NostrEvent } from '@nostr-dev-kit/ndk';
 import { getReadNDK, getWriteNDK } from '@services/ndk';
+import { Debugger } from 'debug';
+
+const log: Debugger = logger.extend('rest:card:reset:claim:post');
+const debug: Debugger = log.extend('debug');
 
 const RESET_EXPIRY_SECONDS: number = 180; // 3 minutes
 
@@ -109,13 +114,23 @@ async function callIdentityProvider(
   const identityProviderResponse = await fetch(apiUrl, {
     method: 'POST',
     body: JSON.stringify(
-      buildIdentityProviderTransferEvent(oldPubkey, newPubkey, oldDelegation),
+      await buildIdentityProviderTransferEvent(
+        oldPubkey,
+        newPubkey,
+        oldDelegation,
+      ),
     ),
     headers: {
       'Content-type': 'application/json',
     },
   });
   if (!identityProviderResponse.ok) {
+    debug(
+      'Received error from identity provider: %s - %s: %O',
+      identityProviderResponse.status,
+      identityProviderResponse.statusText,
+      await identityProviderResponse.text(),
+    );
     return {
       error: `non-2xx response from identity provider: ${identityProviderResponse.status}`,
     };
