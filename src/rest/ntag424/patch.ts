@@ -61,6 +61,10 @@ const handler = async (req: ExtendedRequest, res: Response) => {
         where: { otc: content.otc },
       });
       if (null !== oldNtag) {
+        if (oldNtag.cid === ntag424.ok.cid) {
+          res.status(204).send();
+          return;
+        }
         log(
           'OTC already has NTAG - OLD NTAG_CID: %s - NEW NTAG_CID: %s',
           oldNtag.cid,
