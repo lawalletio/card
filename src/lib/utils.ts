@@ -251,13 +251,13 @@ export const suuid2uuid = (suuid: string): string | null => {
     return null;
   }
 
-  let n: bigint = (suuid.match(/./g) ?? [])
+  const n: bigint = (suuid.match(/./g) ?? [])
     .map((char: string) => BigInt(sAlpha.indexOf(char)))
     .reduce((acc: bigint, curr: bigint) => acc * sAlphaLength + curr, 0n);
   if (0xffffffffffffffffffffffffffffffffn < n) {
     return null;
   }
-  let uuid: string = n.toString(16).padStart(32, '0');
+  const uuid: string = n.toString(16).padStart(32, '0');
 
   return (
     uuid.substring(0, 8) +
