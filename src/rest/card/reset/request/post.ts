@@ -60,7 +60,7 @@ const handler = async (req: ExtendedRequest, res: Response) => {
       .send();
     return;
   }
-  if (!(adminPubkey.ok in adminPubkeys)) {
+  if (!adminPubkeys.some((k) => k === adminPubkey.ok)) {
     res
       .status(400)
       .json({ status: 'ERROR', reason: `Not an admin: ${adminPubkey.ok}` })
@@ -84,7 +84,7 @@ const handler = async (req: ExtendedRequest, res: Response) => {
       .send();
     return;
   }
-  if (targetPubkey.ok in adminPubkeys) {
+  if (adminPubkeys.some((k) => k === targetPubkey.ok)) {
     res
       .status(400)
       .json({
