@@ -81,7 +81,7 @@ async function buildIdentityProviderTransferEvent(
     pubkey: nostrPubKey,
     tags: [
       ['p', newPubkey],
-      ['t', 'identity-transfer-start'],
+      ['t', 'identity-transfer'],
       [
         'delegation',
         oldPubkey,
