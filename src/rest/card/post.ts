@@ -245,6 +245,7 @@ const handler = async (req: ExtendedRequest, res: Response) => {
           reqEvent,
         ),
       );
+      await resEvent.sign();
       res
         .status(201)
         .send(
