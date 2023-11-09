@@ -34,8 +34,8 @@ const nostrPubKey: string = requiredEnvVar('NOSTR_PUBLIC_KEY');
 const ledgerPubKey: string = requiredEnvVar('LEDGER_PUBLIC_KEY');
 
 const validatePubkey = (pubkey: string): string | null => {
-  const hex64regex: RegExp = /^[0-9a-f]{64}$/gi;
-  const bech32regex: RegExp = /^npub1[023456789acdefghjklmnpqrstuvwxyz]{58}$/gi;
+  const hex64regex: RegExp = /^[0-9a-f]{64}$/i;
+  const bech32regex: RegExp = /^npub1[023456789acdefghjklmnpqrstuvwxyz]{58}$/i;
 
   if (hex64regex.test(pubkey)) {
     return pubkey;
