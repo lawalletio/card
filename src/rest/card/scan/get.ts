@@ -2,7 +2,12 @@ import { Debugger } from 'debug';
 import type { Response } from 'express';
 import type { ExtendedRequest } from '@type/request';
 
-import { logger, requiredEnvVar, uuid2suuid } from '@lib/utils';
+import {
+  jsonParseOrNull,
+  logger,
+  requiredEnvVar,
+  uuid2suuid,
+} from '@lib/utils';
 import {
   ScanQuasiResponse,
   ScanResponse,
@@ -19,6 +24,10 @@ const debug: Debugger = log.extend('debug');
 
 const federationId: string = requiredEnvVar('LAWALLET_FEDERATION_ID');
 const apiBaseUrl: string = requiredEnvVar('LAWALLET_API_BASE_URL');
+
+const identityProviderApiBase: string = requiredEnvVar(
+  'IDENTITY_PROVIDER_API_BASE',
+);
 
 const laWalletActionHeader: string = 'X-LaWallet-Action'.toLowerCase();
 const laWalletParamHeader: string = 'X-LaWallet-Param'.toLowerCase();
@@ -338,16 +347,22 @@ type InfoResponseHolder = {
   }[];
 };
 
+type InfoResponseIdentity = {
+  name: string;
+};
+
 type InfoResponse = {
   status: {
     initialized: boolean;
     associated: boolean;
     activated: boolean;
     hasDelegation: boolean;
+    hasIdentity: boolean;
   };
   ntag424: MaybeErrorNull<InfoResponseNtag424>;
   card: MaybeErrorNull<InfoResponseCard>;
   holder: MaybeErrorNull<InfoResponseHolder>;
+  identity: MaybeErrorNull<InfoResponseIdentity>;
 };
 
 const handleInfo = async (req: ExtendedRequest, res: Response) => {
@@ -362,10 +377,12 @@ const handleInfo = async (req: ExtendedRequest, res: Response) => {
       associated: false,
       activated: false,
       hasDelegation: false,
+      hasIdentity: false,
     },
     ntag424: null,
     card: null,
     holder: null,
+    identity: null,
   };
 
   if ('error' in ntag424) {
@@ -435,6 +452,24 @@ const handleInfo = async (req: ExtendedRequest, res: Response) => {
             }),
           },
         };
+        let apiBase = identityProviderApiBase;
+        while (apiBase.lastIndexOf('/') === apiBase.length - 1) {
+          apiBase = apiBase.slice(0, -1);
+        }
+        const apiUrl: URL = new URL(
+          `pubkey/${card!.holder!.pubKey}`,
+          `${apiBase}/`,
+        );
+        const identityProviderResponse = await fetch(apiUrl, { method: 'GET' });
+        if (identityProviderResponse.ok) {
+          const username: string | null = jsonParseOrNull(
+            await identityProviderResponse.text(),
+          )?.username;
+          if (null !== username) {
+            response.identity = { ok: { name: username } };
+            response.status.hasIdentity = true;
+          }
+        }
       }
     }
   }
