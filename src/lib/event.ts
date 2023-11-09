@@ -104,9 +104,9 @@ export function responseEvent(
 export function validateDelegationConditions(
   conditions: string,
 ): { kind: number; since: number; until: number } | null {
-  const rKind: RegExp = /^kind=(?<kind>[1-9][0-9]*)$/g;
-  const rSince: RegExp = /^created_at>(?<ts>[1-9][0-9]*)$/g;
-  const rUntil: RegExp = /^created_at<(?<ts>[1-9][0-9]*)$/g;
+  const rKind: RegExp = /^kind=(?<kind>[1-9][0-9]*)$/;
+  const rSince: RegExp = /^created_at>(?<ts>[1-9][0-9]*)$/;
+  const rUntil: RegExp = /^created_at<(?<ts>[1-9][0-9]*)$/;
 
   let kind: number | null = null;
   let since: number | null = null;
