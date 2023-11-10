@@ -43,6 +43,10 @@ const getPubkeyFromPC = async (
 
 const handler = async (req: ExtendedRequest, res: Response) => {
   debug(`Request body as JSON: ${JSON.stringify(req.body)}`);
+  debug(['target_p'].every((t) => t in req.body));
+  debug(['target_c'].every((t) => t in req.body));
+  debug(['admin_p'].every((t) => t in req.body));
+  debug(['admin_c'].every((t) => t in req.body));
   if (
     !['target_p', 'target_c', 'admin_p', 'admin_c'].every((t) => t in req.body)
   ) {
