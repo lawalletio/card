@@ -169,6 +169,9 @@ export function validateDelegation(
     ],
     created_at: nowInSeconds(),
     pubkey: requiredEnvVar('NOSTR_PUBLIC_KEY'),
+    content: '',
+    id: '',
+    sig: '',
   };
   return nip26.getDelegator(event) === delegatorPubKey;
 }
