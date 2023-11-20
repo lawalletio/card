@@ -49,7 +49,11 @@ const handler = async (req: ExtendedRequest, res: Response) => {
   debug(`ADMIN_C: ${['admin_c'].every((t) => t in req.body)}`);
   debug(`TARGET_PC: ${['target_p', 'target_c'].every((t) => t in req.body)}`);
   debug(`ADMIN_PC: ${['admin_p', 'admin_c'].every((t) => t in req.body)}`);
-  debug(`ALL: ${['target_p', 'target_c', 'admin_p', 'admin_c'].every((t) => t in req.body)}`);
+  debug(
+    `ALL: ${['target_p', 'target_c', 'admin_p', 'admin_c'].every(
+      (t) => t in req.body,
+    )}`,
+  );
 
   if (
     !['target_p', 'target_c', 'admin_p', 'admin_c'].every((t) => t in req.body)
