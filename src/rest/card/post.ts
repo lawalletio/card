@@ -10,7 +10,7 @@ import {
 import { logger, requiredEnvVar } from '@lib/utils';
 import type { ExtendedRequest } from '@type/request';
 import { Holder, Prisma, PrismaClient } from '@prisma/client';
-import { NDKEvent } from '@nostr-dev-kit/ndk';
+import { NDKEvent, NostrEvent } from '@nostr-dev-kit/ndk';
 import { getWriteNDK } from '@services/ndk';
 
 const log: Debugger = logger.extend('rest:card:post');
@@ -41,7 +41,7 @@ function defaultLimits(): Prisma.LimitCreateNestedManyWithoutCardInput {
     createMany: {
       data: requiredEnvVar('DEFAULT_LIMITS')
         .split(':')
-        .map<Prisma.LimitCreateWithoutCardInput>((l) => {
+        .map((l: string): Prisma.LimitCreateWithoutCardInput => {
           const limit = l.split(';');
           return {
             name: limit[0],
@@ -64,8 +64,8 @@ function defaultLimits(): Prisma.LimitCreateNestedManyWithoutCardInput {
 function defaultTrustedMerchants(): Prisma.TrustedMerchantsUncheckedCreateWithoutHolderInput[] {
   return requiredEnvVar('DEFAULT_TRUSTED_MERCHANTS')
     .split(':')
-    .filter((m) => m)
-    .map<{ merchantPubKey: string }>((m) => {
+    .filter((m: string): boolean => !!m)
+    .map((m: string): { merchantPubKey: string } => {
       return { merchantPubKey: m };
     });
 }
@@ -82,7 +82,8 @@ function findOrCreateHolder(
   pubKey: string,
   delegation: DelegationReq,
 ): Promise<Holder> {
-  const trustedMerchants = defaultTrustedMerchants();
+  const trustedMerchants: Prisma.TrustedMerchantsUncheckedCreateWithoutHolderInput[] =
+    defaultTrustedMerchants();
   const create: Prisma.HolderCreateInput = {
     pubKey,
     delegations: { create: delegation },
@@ -90,7 +91,9 @@ function findOrCreateHolder(
   const update: Prisma.HolderUpdateInput = {
     delegations: {
       connectOrCreate: {
-        where: { delegationToken: delegation.delegationToken },
+        where: {
+          delegationToken: delegation.delegationToken,
+        },
         create: delegation,
       },
     },
@@ -100,20 +103,23 @@ function findOrCreateHolder(
       createMany: { data: trustedMerchants },
     };
     update.trustedMerchants = {
-      connectOrCreate:
-        trustedMerchants.map<Prisma.TrustedMerchantsCreateOrConnectWithoutHolderInput>(
-          ({ merchantPubKey }) => {
-            return {
-              where: {
-                holderPubKey_merchantPubKey: {
-                  holderPubKey: pubKey,
-                  merchantPubKey,
-                },
+      connectOrCreate: trustedMerchants.map(
+        (
+          merchant: Prisma.TrustedMerchantsUncheckedCreateWithoutHolderInput,
+        ): Prisma.TrustedMerchantsCreateOrConnectWithoutHolderInput => {
+          return {
+            where: {
+              holderPubKey_merchantPubKey: {
+                holderPubKey: pubKey,
+                merchantPubKey: merchant.merchantPubKey,
               },
-              create: { merchantPubKey },
-            };
-          },
-        ),
+            },
+            create: {
+              merchantPubKey: merchant.merchantPubKey,
+            },
+          };
+        },
+      ),
     };
   }
   return prisma.holder.upsert({
@@ -139,7 +145,8 @@ function parseCardActivateReq(content: string): CardActivateReq {
   ) {
     throw new Error('Not a valid content');
   }
-  const conditions = validateDelegationConditions(req.delegation.conditions);
+  const conditions: { kind: number; since: number; until: number } | null =
+    validateDelegationConditions(req.delegation.conditions);
   if (!conditions) {
     throw new Error('Not valid delegation conditions');
   }
@@ -169,7 +176,7 @@ function parseCardActivateReq(content: string): CardActivateReq {
  *  }
  */
 const handler = async (req: ExtendedRequest, res: Response) => {
-  const reqEvent = parseEventBody(req.body);
+  const reqEvent: NostrEvent | null = parseEventBody(req.body);
   if (!reqEvent) {
     res.status(422).send();
     return;
@@ -198,18 +205,23 @@ const handler = async (req: ExtendedRequest, res: Response) => {
     res.status(422).send();
     return;
   }
-  const ntag424 = await req.context.prisma.ntag424.findFirst({
-    select: { cid: true, design: true },
+  const ntag424: Prisma.Ntag424GetPayload<{
+    select: { cid: true; design: true };
+  }> | null = await req.context.prisma.ntag424.findFirst({
+    select: {
+      cid: true,
+      design: true,
+    },
     where: {
       otc: content.otc,
-      card: null, // we only care about available ntags
+      card: null, // we only care about available NTags
     },
   });
   if (!ntag424) {
     res.status(404).send();
     return;
   }
-  const holder = await findOrCreateHolder(
+  const holder: Holder = await findOrCreateHolder(
     req.context.prisma,
     reqEvent.pubkey,
     content.delegation,
@@ -232,7 +244,10 @@ const handler = async (req: ExtendedRequest, res: Response) => {
         },
         limits: defaultLimits(),
       },
-      include: { holder: true, limits: true },
+      include: {
+        holder: true,
+        limits: true,
+      },
     })
     .then(async (card) => {
       const resEvent = new NDKEvent(
