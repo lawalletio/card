@@ -1,6 +1,12 @@
 import { NostrEvent } from '@nostr-dev-kit/ndk';
 import { Debugger } from 'debug';
-import { Event, nip04, nip26, validateEvent, verifySignature } from 'nostr-tools';
+import {
+  Event,
+  nip04,
+  nip26,
+  validateEvent,
+  verifySignature,
+} from 'nostr-tools';
 
 import { logger, nowInSeconds, requiredEnvVar, requiredProp } from '@lib/utils';
 

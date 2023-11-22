@@ -3,7 +3,13 @@ import type { NDKFilter, NostrEvent } from '@nostr-dev-kit/ndk';
 import { Kind } from '@lib/event';
 import { nowInSeconds, requiredEnvVar } from '@lib/utils';
 
-import { ConfigTypes, CardConfigPayload, Limit, parseCardConfigEvent, CardStatus } from '@lib/config';
+import {
+  ConfigTypes,
+  CardConfigPayload,
+  Limit,
+  parseCardConfigEvent,
+  CardStatus,
+} from '@lib/config';
 
 import { Context } from '@type/request';
 
@@ -24,7 +30,12 @@ const cardPublicKey: string = requiredEnvVar('NOSTR_PUBLIC_KEY');
  */
 function extractDPubkey(event: NostrEvent): string | null {
   try {
-    return (event.tags.find((t: string[]): boolean => 'd' === t[0] && t[1].endsWith(`:${ConfigTypes.CONFIG.valueOf()}`)) ?? [null, null])[1]?.split(':')[0] ?? null;
+    return (
+      (event.tags.find(
+        (t: string[]): boolean =>
+          'd' === t[0] && t[1].endsWith(`:${ConfigTypes.CONFIG.valueOf()}`),
+      ) ?? [null, null])[1]?.split(':')[0] ?? null
+    );
   } catch {
     /* ... */
   }
@@ -45,42 +56,56 @@ const getHandler = (ctx: Context): ((event: NostrEvent) => void) => {
       throw new Error('Missing holder pubkey');
     }
 
-    const content: CardConfigPayload = await parseCardConfigEvent(event, cardPrivateKey, cardPublicKey);
+    const content: CardConfigPayload = await parseCardConfigEvent(
+      event,
+      cardPrivateKey,
+      cardPublicKey,
+    );
 
     await ctx.prisma.$transaction(async (tx) => {
-      const merchantPubKeys: string[] = (await tx.merchant.findMany({
-        select: {
-          pubKey: true,
-        },
-      })).map((merchant: { pubKey: string }): string => merchant.pubKey);
+      const merchantPubKeys: string[] = (
+        await tx.merchant.findMany({
+          select: {
+            pubKey: true,
+          },
+        })
+      ).map((merchant: { pubKey: string }): string => merchant.pubKey);
       await tx.trustedMerchants.deleteMany({
         where: {
           holderPubKey: holderPubKey,
         },
       });
       await tx.trustedMerchants.createMany({
-        data: content['trusted-merchants'].filter(
-          (trustedMerchant: { pubkey: string }): boolean => merchantPubKeys.includes(trustedMerchant.pubkey),
-        ).map(
-          (trustedMerchant: { pubkey: string }): Prisma.TrustedMerchantsCreateManyInput => {
-            return {
-              holderPubKey: holderPubKey,
-              merchantPubKey: trustedMerchant.pubkey,
-            };
-          },
-        ),
+        data: content['trusted-merchants']
+          .filter((trustedMerchant: { pubkey: string }): boolean =>
+            merchantPubKeys.includes(trustedMerchant.pubkey),
+          )
+          .map(
+            (trustedMerchant: {
+              pubkey: string;
+            }): Prisma.TrustedMerchantsCreateManyInput => {
+              return {
+                holderPubKey: holderPubKey,
+                merchantPubKey: trustedMerchant.pubkey,
+              };
+            },
+          ),
       });
 
-      const holderCardUuids: string[] = (await tx.card.findMany({
-        where: {
-          holderPubKey: holderPubKey,
-        },
-        select: {
-          uuid: true,
-        },
-      })).map((x: { uuid: string }) => x.uuid);
+      const holderCardUuids: string[] = (
+        await tx.card.findMany({
+          where: {
+            holderPubKey: holderPubKey,
+          },
+          select: {
+            uuid: true,
+          },
+        })
+      ).map((x: { uuid: string }) => x.uuid);
 
-      const cardUuids: string[] = Object.keys(content.cards).filter((uuid: string): boolean => holderCardUuids.includes(uuid));
+      const cardUuids: string[] = Object.keys(content.cards).filter(
+        (uuid: string): boolean => holderCardUuids.includes(uuid),
+      );
 
       await tx.limit.deleteMany({
         where: {
@@ -91,22 +116,20 @@ const getHandler = (ctx: Context): ((event: NostrEvent) => void) => {
       });
       await tx.limit.createMany({
         data: ([] as Prisma.LimitCreateManyInput[]).concat(
-          ...cardUuids.map(
-            (uuid: string): Prisma.LimitCreateManyInput[] => {
-              return content.cards[uuid].limits.map(
-                (limit: Limit): Prisma.LimitCreateManyInput => {
-                  return {
-                    cardUuid: uuid,
-                    amount: limit.amount,
-                    delta: limit.delta,
-                    description: limit.description,
-                    name: limit.name,
-                    token: limit.token,
-                  };
-                },
-              );
-            },
-          ),
+          ...cardUuids.map((uuid: string): Prisma.LimitCreateManyInput[] => {
+            return content.cards[uuid].limits.map(
+              (limit: Limit): Prisma.LimitCreateManyInput => {
+                return {
+                  cardUuid: uuid,
+                  amount: limit.amount,
+                  delta: limit.delta,
+                  description: limit.description,
+                  name: limit.name,
+                  token: limit.token,
+                };
+              },
+            );
+          }),
         ),
       });
       await tx.card.updateMany({
