@@ -112,7 +112,7 @@ export async function buildCardDataEvent(
     cardPublicKey,
     [cardPublicKey, holderPubKey],
   );
-  event.kind = Kind.PARAMETRIZED_REPLACEABLE;
+  event.kind = Kind.PARAMETRIZED_REPLACEABLE.valueOf();
   event.tags.concat([
     ['t', 'card-data'],
     ['d', `${holderPubKey}:card-data`],
@@ -331,7 +331,7 @@ export async function buildCardConfigEvent(
     holderPubKey,
     [cardPublicKey, holderPubKey],
   );
-  event.kind = Kind.PARAMETRIZED_REPLACEABLE;
+  event.kind = Kind.PARAMETRIZED_REPLACEABLE.valueOf();
   event.tags.concat([
     ['t', 'card-config'],
     ['d', `${holderPubKey}:card-config`],
