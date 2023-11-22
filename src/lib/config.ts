@@ -13,6 +13,11 @@ export enum CardStatus {
   DISABLED = 'DISABLED',
 }
 
+export enum ConfigTypes {
+  DATA = 'card-data',
+  CONFIG = 'card-config',
+}
+
 export type Design = { uuid: string; name: string; description: string };
 export type CardDataPayload = { [uuid: string]: { design: Design } };
 
@@ -114,8 +119,8 @@ export async function buildCardDataEvent(
   );
   event.kind = Kind.PARAMETRIZED_REPLACEABLE.valueOf();
   event.tags.concat([
-    ['t', 'card-data'],
-    ['d', `${holderPubKey}:card-data`],
+    ['t', ConfigTypes.DATA.valueOf()],
+    ['d', `${holderPubKey}:${ConfigTypes.DATA.valueOf()}`],
   ]);
 
   return event;
@@ -333,8 +338,8 @@ export async function buildCardConfigEvent(
   );
   event.kind = Kind.PARAMETRIZED_REPLACEABLE.valueOf();
   event.tags.concat([
-    ['t', 'card-config'],
-    ['d', `${holderPubKey}:card-config`],
+    ['t', ConfigTypes.CONFIG.valueOf()],
+    ['d', `${holderPubKey}:${ConfigTypes.CONFIG.valueOf()}`],
   ]);
 
   return event;
