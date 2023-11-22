@@ -1,6 +1,6 @@
 import { NostrEvent } from '@nostr-dev-kit/ndk';
 import { Debugger } from 'debug';
-import { nip04, nip26, validateEvent, verifySignature } from 'nostr-tools';
+import { Event, nip04, nip26, validateEvent, verifySignature } from 'nostr-tools';
 
 import { logger, nowInSeconds, requiredEnvVar, requiredProp } from '@lib/utils';
 
@@ -32,7 +32,7 @@ export enum Kind {
  */
 function validateNip26(event: NostrEvent): boolean {
   if (event.tags.some((t) => 'delegation' === t[0])) {
-    const delegator = nip26.getDelegator(event);
+    const delegator = nip26.getDelegator(event as Event<number>);
     if (delegator) {
       event.pubkey = delegator;
     } else {
@@ -57,7 +57,7 @@ export function parseEventBody(
   debug('Received event: %O, expectedPubkey: %O', event, expectedPubkey);
   if (!validateEvent(event)) {
     log('Event validation failed');
-  } else if (!verifySignature(event)) {
+  } else if (!verifySignature(event as Event<number>)) {
     log('Signature validation failed');
   } else if (!validateNip26(event)) {
     log('NIP-26 validation failed');
@@ -587,4 +587,15 @@ export async function parseMultiNip04Event(
   }
 
   return decryptedMessage;
+}
+
+/**
+ * Returns first tag value by its tag name
+ */
+export function getTagValue(
+  event: NostrEvent,
+  tagName: string,
+): string | undefined {
+  const tag: string[] | undefined = event.tags.find((t) => t[0] === tagName);
+  return tag?.at(1);
 }
