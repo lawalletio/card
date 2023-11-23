@@ -88,6 +88,7 @@ export enum Ntag424Error {
  * @returns  The retrieved Ntag424 entity or null if errors encountered
  */
 export const retrieveNtag424FromPC = async (
+  prisma: PrismaClient,
   p: string | undefined,
   c: string | undefined,
 ): Promise<{ ok: Ntag424 } | { error: Ntag424Error }> => {

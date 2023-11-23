@@ -37,6 +37,7 @@ const handler = async (req: ExtendedRequest, res: Response) => {
   }
 
   const ntag424 = await retrieveNtag424FromPC(
+    req.context.prisma,
     req.query.p as string,
     req.query.c as string,
   );

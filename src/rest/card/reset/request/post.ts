@@ -26,7 +26,7 @@ const getPubkeyFromPC = async (
   c: string,
 ): Promise<{ ok: string } | { error: string }> => {
   const ntag424: { ok: Ntag424 } | { error: string } =
-    await retrieveNtag424FromPC(p, c);
+    await retrieveNtag424FromPC(prisma, p, c);
   if ('error' in ntag424) {
     return { error: `Invalid NTAG: ${ntag424.error}` };
   }

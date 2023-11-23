@@ -94,6 +94,7 @@ const handleScan = async (req: ExtendedRequest, res: Response) => {
   // 1. check query params
   const ntag424: { ok: Ntag424 } | { error: string } =
     await retrieveNtag424FromPC(
+      req.context.prisma,
       req.query.p as string | undefined,
       req.query.c as string | undefined,
     );
@@ -183,6 +184,7 @@ const handleExtendedScan = async (req: ExtendedRequest, res: Response) => {
   // 1. check query params
   const ntag424: { ok: Ntag424 } | { error: string } =
     await retrieveNtag424FromPC(
+      req.context.prisma,
       req.query.p as string | undefined,
       req.query.c as string | undefined,
     );
@@ -276,6 +278,7 @@ const handleExtendedScan = async (req: ExtendedRequest, res: Response) => {
 
 const handleIdentityQuery = async (req: ExtendedRequest, res: Response) => {
   const ntag424 = await retrieveNtag424FromPC(
+    req.context.prisma,
     req.query.p as string | undefined,
     req.query.c as string | undefined,
   );
@@ -367,6 +370,7 @@ type InfoResponse = {
 
 const handleInfo = async (req: ExtendedRequest, res: Response) => {
   const ntag424 = await retrieveNtag424FromPC(
+    req.context.prisma,
     req.query.p as string | undefined,
     req.query.c as string | undefined,
   );
@@ -506,6 +510,7 @@ const callbackUrl = (pubkey: string) =>
 
 const handlePayRequest = async (req: ExtendedRequest, res: Response) => {
   const ntag424 = await retrieveNtag424FromPC(
+    req.context.prisma,
     req.query.p as string | undefined,
     req.query.c as string | undefined,
   );
