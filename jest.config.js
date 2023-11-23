@@ -2,7 +2,7 @@
 module.exports = {
   preset: 'ts-jest',
   transform: {
-    '^.+\\.ts$': 'ts-jest',
+    '\\.ts$': 'ts-jest',
   },
   moduleNameMapper: {
     '^@lib/(.*)$': '<rootDir>/src/lib/$1',
