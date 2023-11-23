@@ -12,6 +12,7 @@ import type { ExtendedRequest } from '@type/request';
 import { Holder, Prisma, PrismaClient } from '@prisma/client';
 import { NDKEvent, NostrEvent } from '@nostr-dev-kit/ndk';
 import { getWriteNDK } from '@services/ndk';
+import { buildCardDataEvent } from '@lib/config';
 
 const log: Debugger = logger.extend('rest:card:post');
 const error: Debugger = log.extend('error');
@@ -261,6 +262,11 @@ const handler = async (req: ExtendedRequest, res: Response) => {
         ),
       );
       await resEvent.sign();
+      const event = await buildCardDataEvent(
+        reqEvent.pubkey,
+        req.context.prisma,
+      );
+      await req.context.outbox.publish(event);
       res
         .status(201)
         .send(
