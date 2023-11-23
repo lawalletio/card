@@ -3,8 +3,6 @@ import { PrismaClient } from '@prisma/client';
 import { Kind, buildMultiNip04Event, parseMultiNip04Event } from './event';
 import { requiredEnvVar } from './utils';
 
-const prisma: PrismaClient = new PrismaClient();
-
 const cardPrivateKey: string = requiredEnvVar('NOSTR_PRIVATE_KEY');
 const cardPublicKey: string = requiredEnvVar('NOSTR_PUBLIC_KEY');
 
@@ -89,6 +87,7 @@ export type CardConfigPayload = {
  */
 export async function buildCardDataEvent(
   holderPubKey: string,
+  prisma: PrismaClient,
 ): Promise<NostrEvent> {
   const event: NostrEvent = await buildMultiNip04Event(
     JSON.stringify(
@@ -276,6 +275,7 @@ export async function parseCardDataEvent(
 export async function buildCardConfigEvent(
   holderPrivKey: string,
   holderPubKey: string,
+  prisma: PrismaClient,
 ): Promise<NostrEvent> {
   type DBCard = {
     uuid: string;
