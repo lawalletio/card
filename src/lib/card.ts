@@ -256,6 +256,7 @@ export type PaymentRequestWithCard = Prisma.PaymentRequestGetPayload<{
 }>;
 
 export const getExtantPaymentRequestByUuid = async (
+  prisma: PrismaClient,
   uuid: string,
 ): Promise<PaymentRequestWithCard | null> => {
   return prisma.paymentRequest.findUnique({

@@ -84,7 +84,7 @@ const generateTransactionEvent = async (
     return { error: TransactionError.COULD_NOT_PARSE_K1_SSUID };
   }
   const paymentRequest: PaymentRequestWithCard | null =
-    await getExtantPaymentRequestByUuid(paymentUuid);
+    await getExtantPaymentRequestByUuid(prisma, paymentUuid);
   if (null === paymentRequest) {
     debug('Could not find a payment request with uuid: %o', paymentUuid);
     return { error: TransactionError.COULD_NOT_FIND_PAYMENT_REQUEST_FOR_UUID };

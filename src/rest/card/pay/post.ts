@@ -60,7 +60,7 @@ const generateTransactionEvent = async (
     return null;
   }
   const paymentRequest: PaymentRequestWithCard | null =
-    await getExtantPaymentRequestByUuid(paymentUuid);
+    await getExtantPaymentRequestByUuid(prisma, paymentUuid);
   if (null === paymentRequest) {
     error('Could not find a payment request with uuid: %o', paymentUuid);
     return null;
