@@ -10,7 +10,7 @@ import {
 } from '@lib/utils';
 import { Kind } from '@lib/event';
 
-import { Delegation } from '@prisma/client';
+import { Delegation, PrismaClient } from '@prisma/client';
 
 import { PaymentRequestObject, decode } from 'bolt11';
 import {
@@ -63,6 +63,7 @@ enum TransactionError {
 }
 
 const generateTransactionEvent = async (
+  prisma: PrismaClient,
   k1: string | undefined,
   pr: string | undefined,
 ): Promise<{ ok: NostrEvent } | { error: TransactionError }> => {
@@ -158,7 +159,7 @@ const handler = async (req: ExtendedRequest, res: Response) => {
   const pr: string | undefined = req.query.pr as string | undefined;
 
   const transactionEvent: { ok: NostrEvent } | { error: TransactionError } =
-    await generateTransactionEvent(k1, pr);
+    await generateTransactionEvent(req.context.prisma, k1, pr);
   if ('error' in transactionEvent) {
     res
       .status(400)

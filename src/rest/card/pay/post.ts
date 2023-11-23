@@ -11,7 +11,7 @@ import {
 } from '@lib/utils';
 import { Kind, parseEventBody } from '@lib/event';
 
-import { Delegation } from '@prisma/client';
+import { Delegation, PrismaClient } from '@prisma/client';
 
 import {
   PaymentRequestWithCard,
@@ -46,6 +46,7 @@ const validatePubkey = (pubkey: string): string | null => {
 };
 
 const generateTransactionEvent = async (
+  prisma: PrismaClient,
   { k1, pubkey, tokens }: PayReq,
   eventId: string,
 ): Promise<NostrEvent | null> => {
@@ -194,6 +195,7 @@ const handler = async (req: ExtendedRequest, res: Response) => {
   }
 
   const transactionEvent: NostrEvent | null = await generateTransactionEvent(
+    req.context.prisma,
     content,
     requiredProp(reqEvent, 'id'),
   );
