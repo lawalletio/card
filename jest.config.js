@@ -11,8 +11,7 @@ module.exports = {
     '^@type/(.*)$': '<rootDir>/src/type/$1',
   },
   testMatch: [
-    '<rootDir>/**/(*.)test.(js|ts)',
-    '<rootDir>/src/**/*.{spec,test}.{js,jsx,ts,tsx}',
+    '<rootDir>/tests/**/*.test.ts',
   ],
   testEnvironment: 'node',
   clearMocks: true,
