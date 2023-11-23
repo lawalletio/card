@@ -105,9 +105,11 @@ const generateTransactionEvent = async (
     return { error: TransactionError.INVALID_AMOUNT_FOR_PAYMENT_REQUEST };
   }
 
-  const limits: { [_: string]: number } = await getLimits(paymentRequest.card, [
-    defaultToken,
-  ]);
+  const limits: { [_: string]: number } = await getLimits(
+    prisma,
+    paymentRequest.card,
+    [defaultToken],
+  );
   const balance: { [_: string]: number } = await fetchBalances(
     getReadNDK(),
     paymentRequest.card.holderPubKey,

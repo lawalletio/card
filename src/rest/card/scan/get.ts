@@ -134,7 +134,11 @@ const handleScan = async (req: ExtendedRequest, res: Response) => {
   }
 
   // 3. check limits
-  const limits: { [_: string]: number } = await getLimits(card, [defaultToken]);
+  const limits: { [_: string]: number } = await getLimits(
+    req.context.prisma,
+    card,
+    [defaultToken],
+  );
   if (0 === limits.length) {
     res.status(400).json({ status: 'ERROR', reason: 'Limits exceeded' }).send();
     return;
@@ -230,7 +234,11 @@ const handleExtendedScan = async (req: ExtendedRequest, res: Response) => {
     });
 
   // 3. check limits
-  const limits: { [_: string]: number } = await getLimits(card, tokens);
+  const limits: { [_: string]: number } = await getLimits(
+    req.context.prisma,
+    card,
+    tokens,
+  );
   if (0 === limits.length) {
     res.status(400).json({ status: 'ERROR', reason: 'Limits exceeded' }).send();
     return;

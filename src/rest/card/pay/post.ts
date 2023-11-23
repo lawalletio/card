@@ -76,6 +76,7 @@ const generateTransactionEvent = async (
     return null;
   }
   const limits: { [_: string]: number } = await getLimits(
+    prisma,
     paymentRequest.card,
     Object.keys(tokens),
   );

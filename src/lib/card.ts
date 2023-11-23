@@ -303,6 +303,7 @@ export const getCardDelegation = async (
  * @returns  A dictionary mapping tokens to their remaining permissible amounts
  */
 export const getLimits = async (
+  prisma: PrismaClient,
   card: Card,
   tokens: string[] = [],
 ): Promise<{ [_: string]: number }> => {
