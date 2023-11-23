@@ -354,6 +354,7 @@ HAVING
 export type Tokens = { [_: string]: number };
 
 export const addPaymentsForPaymentRequest = (
+  prisma: PrismaClient,
   paymentRequest: PaymentRequest,
   tokens: Tokens,
 ) => {

@@ -133,7 +133,9 @@ const generateTransactionEvent = async (
     return { error: TransactionError.MISSING_DELEGATION };
   }
 
-  addPaymentsForPaymentRequest(paymentRequest, { [defaultToken]: msats });
+  addPaymentsForPaymentRequest(prisma, paymentRequest, {
+    [defaultToken]: msats,
+  });
 
   return {
     ok: {
