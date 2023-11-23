@@ -7,7 +7,7 @@ import { logger } from '@lib/utils';
 import { ExtendedRequest } from '@type/request';
 import { NostrEvent } from '@nostr-dev-kit/ndk';
 
-const log: Debugger = logger.extend('rest:card:publish-data:post');
+const log: Debugger = logger.extend('rest:card:data:request:post');
 const error: Debugger = log.extend('error');
 
 /**
@@ -19,7 +19,7 @@ const handler = async (req: ExtendedRequest, res: Response) => {
     res.status(422).send();
     return;
   }
-  if ('card-publish-data' !== getTagValue(reqEvent, 't')) {
+  if ('card-data-request' !== getTagValue(reqEvent, 't')) {
     log('Received incorrect request');
     res.status(422).send();
     return;

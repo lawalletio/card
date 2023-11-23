@@ -7,7 +7,7 @@ import { logger } from '@lib/utils';
 import { ExtendedRequest } from '@type/request';
 import { NostrEvent } from '@nostr-dev-kit/ndk';
 
-const log: Debugger = logger.extend('rest:card:config:post');
+const log: Debugger = logger.extend('rest:card:config:request:post');
 const error: Debugger = log.extend('error');
 
 /**

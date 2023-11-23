@@ -2,7 +2,7 @@ import { buildCardDataEvent } from '@lib/config';
 import { getTagValue, parseEventBody } from '@lib/event';
 import { NostrEvent } from '@nostr-dev-kit/ndk';
 
-import handler from '@rest/card/publish-data/post';
+import handler from '@rest/card/data/request/post';
 
 jest.mock('@lib/config', () => {
   return {
@@ -18,7 +18,7 @@ jest.mock('@lib/event', () => {
   };
 });
 
-describe('POST to /card/publish-data', () => {
+describe('POST to /card/data/request', () => {
   it('should publish event when received valid request', async () => {
     const pubkey =
       '9e34efffcc194e9636392a5937ce7986aef62f5f36b62312dcc7ddecd606b175';
@@ -27,7 +27,7 @@ describe('POST to /card/publish-data', () => {
       id: '1234',
     };
     jest.mocked(parseEventBody).mockReturnValue(reqEvent as NostrEvent);
-    jest.mocked(getTagValue).mockReturnValue('card-publish-data');
+    jest.mocked(getTagValue).mockReturnValue('card-data-request');
     jest.mocked(buildCardDataEvent).mockResolvedValue(dataEvent as NostrEvent);
     const body = {};
     const req: any = {
@@ -93,7 +93,7 @@ describe('POST to /card/publish-data', () => {
       id: '1234',
     };
     jest.mocked(parseEventBody).mockReturnValue(reqEvent as NostrEvent);
-    jest.mocked(getTagValue).mockReturnValue('card-publish-data');
+    jest.mocked(getTagValue).mockReturnValue('card-data-request');
     jest.mocked(buildCardDataEvent).mockResolvedValue(dataEvent as NostrEvent);
     const body = {};
     const req: any = {
