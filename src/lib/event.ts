@@ -19,6 +19,10 @@ import {
   randomBytes,
 } from 'crypto';
 
+import * as crypto from 'node:crypto';
+// @ts-ignore
+globalThis.crypto = crypto;
+
 const log: Debugger = logger.extend('lib:event');
 const debug: Debugger = log.extend('debug');
 
