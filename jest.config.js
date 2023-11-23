@@ -18,9 +18,16 @@ module.exports = {
   testEnvironment: 'node',
   clearMocks: true,
   collectCoverage: true,
-  collectCoverageFrom: ['<rootDir>/src/**/*.ts'],
+  collectCoverageFrom: [
+    '<rootDir>/src/**/*.ts',
+  ],
   coverageDirectory: '.coverage',
   coverageProvider: 'v8',
-  testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/dist/'],
-  setupFiles: ['dotenv/config'],
+  testPathIgnorePatterns: [
+    '<rootDir>/node_modules/',
+    '<rootDir>/dist/',
+  ],
+  setupFiles: [
+    'dotenv/config',
+  ],
 };
