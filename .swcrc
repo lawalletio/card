@@ -13,7 +13,7 @@
       "@nostr/*": ["./src/nostr/*"],
       "@rest/*": ["./src/rest/*"],
       "@services/*": ["./src/services/*"],
-      "@type/*": ["src/type/*"]
+      "@type/*": ["./src/type/*"]
     },
     "baseUrl": "."
   },
