@@ -5,10 +5,12 @@ module.exports = {
     '\\.ts$': 'ts-jest',
   },
   moduleNameMapper: {
-    '^@lib/(.*)$': '<rootDir>/src/lib/$1',
-    '^@rest/(.*)$': '<rootDir>/src/rest/$1',
-    '^@services/(.*)$': '<rootDir>/src/services/$1',
-    '^@type/(.*)$': '<rootDir>/src/type/$1',
+    "^@constants/(.*)$": '<rootDir>/src/constants/$1',
+    "^@lib/(.*)$": '<rootDir>/src/lib/$1',
+    "^@nostr/(.*)$": '<rootDir>/src/nostr/$1',
+    "^@rest/(.*)$": '<rootDir>/src/rest/$1',
+    "^@services/(.*)$": '<rootDir>/src/services/$1',
+    "^@type/(.*)$": '<rootDir>/src/type/$1',
   },
   testMatch: [
     '<rootDir>/tests/**/*.test.ts',
