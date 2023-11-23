@@ -26,6 +26,6 @@
       "@type/*": ["./src/type/*"]
     }
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "tests/**/*"],
   "exclude": ["node_modules", "./coverage", "./dist", "jest.config.js"]
 }
