@@ -37,6 +37,66 @@ export type CardConfigPayload = {
   cards: { [uuid: string]: CardPayload };
 };
 
+export async function buildCardConfigPayload(
+  holderPubKey: string,
+  prisma: PrismaClient,
+): Promise<CardConfigPayload> {
+  type DBCard = {
+    uuid: string;
+    name: string;
+    description: string;
+    enabled: boolean;
+    limits: Limit[];
+  };
+
+  return {
+    'trusted-merchants': (
+      await prisma.trustedMerchants.findMany({
+        where: {
+          holderPubKey,
+        },
+        select: {
+          merchantPubKey: true,
+        },
+      })
+    ).map((merchant: { merchantPubKey: string }) => {
+      return { pubkey: merchant.merchantPubKey };
+    }),
+    cards: Object.fromEntries(
+      (
+        await prisma.card.findMany({
+          where: {
+            holderPubKey,
+          },
+          select: {
+            uuid: true,
+            name: true,
+            description: true,
+            enabled: true,
+            limits: {
+              select: {
+                name: true,
+                description: true,
+                token: true,
+                amount: true,
+                delta: true,
+              },
+            },
+          },
+        })
+      ).map((card: DBCard) => [
+        card.uuid,
+        {
+          name: card.name,
+          description: card.description,
+          status: card.enabled ? CardStatus.ENABLED : CardStatus.DISABLED,
+          limits: card.limits,
+        },
+      ]),
+    ),
+  };
+}
+
 /**
  * Build a "card-data" event (implemented as a "Multi NIP-04"-type event)
  *
@@ -277,61 +337,8 @@ export async function buildCardConfigEvent(
   holderPubKey: string,
   prisma: PrismaClient,
 ): Promise<NostrEvent> {
-  type DBCard = {
-    uuid: string;
-    name: string;
-    description: string;
-    enabled: boolean;
-    limits: Limit[];
-  };
-
   const event: NostrEvent = await buildMultiNip04Event(
-    JSON.stringify({
-      'trusted-merchants': (
-        await prisma.trustedMerchants.findMany({
-          where: {
-            holderPubKey: holderPubKey,
-          },
-          select: {
-            merchantPubKey: true,
-          },
-        })
-      ).map((merchant: { merchantPubKey: string }) => {
-        return { pubkey: merchant.merchantPubKey };
-      }),
-      cards: Object.fromEntries(
-        (
-          await prisma.card.findMany({
-            where: {
-              holderPubKey: holderPubKey,
-            },
-            select: {
-              uuid: true,
-              name: true,
-              description: true,
-              enabled: true,
-              limits: {
-                select: {
-                  name: true,
-                  description: true,
-                  token: true,
-                  amount: true,
-                  delta: true,
-                },
-              },
-            },
-          })
-        ).map((card: DBCard) => [
-          card.uuid,
-          {
-            name: card.name,
-            description: card.description,
-            status: card.enabled ? CardStatus.ENABLED : CardStatus.DISABLED,
-            limits: card.limits,
-          },
-        ]),
-      ),
-    }),
+    JSON.stringify(await buildCardConfigPayload(holderPubKey, prisma)),
     holderPrivKey,
     holderPubKey,
     [cardPublicKey, holderPubKey],
