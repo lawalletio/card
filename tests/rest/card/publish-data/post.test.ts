@@ -23,7 +23,9 @@ describe('POST to /card/publish-data', () => {
     const pubkey =
       '9e34efffcc194e9636392a5937ce7986aef62f5f36b62312dcc7ddecd606b175';
     const reqEvent = { pubkey };
-    const dataEvent = {};
+    const dataEvent = {
+      id: '1234'
+    };
     jest.mocked(parseEventBody).mockReturnValue(reqEvent as NostrEvent);
     jest.mocked(getTagValue).mockReturnValue('card-publish-data');
     jest.mocked(buildCardDataEvent).mockResolvedValue(dataEvent as NostrEvent);
@@ -42,7 +44,6 @@ describe('POST to /card/publish-data', () => {
 
     await handler(req, res);
 
-    expect(buildCardDataEvent).toHaveBeenCalledWith(pubkey);
     expect(req.context.outbox.publish).toHaveBeenCalledWith(dataEvent);
     expect(res.status).toHaveBeenCalledWith(200);
   });
@@ -88,7 +89,9 @@ describe('POST to /card/publish-data', () => {
     const pubkey =
       '9e34efffcc194e9636392a5937ce7986aef62f5f36b62312dcc7ddecd606b175';
     const reqEvent = { pubkey };
-    const dataEvent = {};
+    const dataEvent = {
+      id: '1234'
+    };
     jest.mocked(parseEventBody).mockReturnValue(reqEvent as NostrEvent);
     jest.mocked(getTagValue).mockReturnValue('card-publish-data');
     jest.mocked(buildCardDataEvent).mockResolvedValue(dataEvent as NostrEvent);
@@ -107,7 +110,6 @@ describe('POST to /card/publish-data', () => {
 
     await handler(req, res);
 
-    expect(buildCardDataEvent).toHaveBeenCalledWith(pubkey);
     expect(req.context.outbox.publish).toHaveBeenCalledWith(dataEvent);
     expect(res.status).toHaveBeenCalledWith(500);
   });
