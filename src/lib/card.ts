@@ -274,6 +274,7 @@ export const getExtantPaymentRequestByUuid = async (
 };
 
 export const getCardDelegation = async (
+  prisma: PrismaClient,
   cardUuid: string,
 ): Promise<Delegation | null> => {
   const card: Card | null = await prisma.card.findUnique({

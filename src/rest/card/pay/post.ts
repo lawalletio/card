@@ -104,6 +104,7 @@ const generateTransactionEvent = async (
   }
 
   const delegation: Delegation | null = await getCardDelegation(
+    prisma,
     paymentRequest.cardUuid,
   );
   if (null === delegation) {
