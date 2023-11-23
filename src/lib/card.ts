@@ -23,8 +23,6 @@ const k1: string = requiredEnvVar('SERVER_AES_KEY_HEX').toLowerCase();
 const zeroIv: Buffer = Buffer.alloc(16);
 const sv2prefix: Buffer = Buffer.from('3cc300010080', 'hex');
 
-const prisma: PrismaClient = new PrismaClient();
-
 /**
  * Decrypt (using the the given hex-string key) the given hex-string ciphertext, and return the decrypted result as a lowercase hex-string
  *
