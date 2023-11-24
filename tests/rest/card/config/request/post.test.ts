@@ -30,7 +30,22 @@ describe('POST to /card/config', () => {
     const reqEvent = { pubkey };
     const config: CardConfigPayload = {
       'trusted-merchants': [],
-      cards: {},
+      cards: {
+        '1da32a6c-a89d-417a-be22-6f2345222973': {
+          name: 'Personal expenses',
+          description: '',
+          status: 'a',
+          limits: [
+            {
+              name: 'Minute',
+              description: '',
+              token: 'BTC',
+              amount: 1000000n,
+              delta: 60,
+            },
+          ],
+        },
+      },
     };
     jest.mocked(parseEventBody).mockReturnValue(reqEvent as NostrEvent);
     jest.mocked(getTagValue).mockReturnValue('card-config-request');
