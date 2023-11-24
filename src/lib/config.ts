@@ -1,7 +1,7 @@
 import { NostrEvent } from '@nostr-dev-kit/ndk';
 import { PrismaClient } from '@prisma/client';
-import { Kind, buildMultiNip04Event, parseMultiNip04Event } from './event';
-import { requiredEnvVar } from './utils';
+import { Kind, buildMultiNip04Event, parseMultiNip04Event } from '@lib/event';
+import { requiredEnvVar } from '@lib/utils';
 
 const cardPrivateKey: string = requiredEnvVar('NOSTR_PRIVATE_KEY');
 const cardPublicKey: string = requiredEnvVar('NOSTR_PUBLIC_KEY');
@@ -177,7 +177,7 @@ export async function buildCardDataEvent(
     [cardPublicKey, holderPubKey],
   );
   event.kind = Kind.PARAMETRIZED_REPLACEABLE.valueOf();
-  event.tags.concat([
+  event.tags = event.tags.concat([
     ['t', ConfigTypes.DATA.valueOf()],
     ['d', `${holderPubKey}:${ConfigTypes.DATA.valueOf()}`],
   ]);

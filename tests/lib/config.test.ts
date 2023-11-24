@@ -1,10 +1,23 @@
 import {
   buildCardConfigPayload,
+  buildCardDataEvent,
   CardConfigPayload,
   CardStatus,
 } from '@lib/config';
 
+import { buildMultiNip04Event } from '@lib/event';
+
 let prismaMock: any;
+
+jest.mock('@lib/event', () => {
+  const originalModule = jest.requireActual('@lib/event');
+
+  return {
+    __esModule: true,
+    ...originalModule,
+    buildMultiNip04Event: jest.fn(),
+  };
+});
 
 beforeAll(() => {
   prismaMock = {
@@ -14,7 +27,7 @@ beforeAll(() => {
 });
 
 describe('Config utils', () => {
-  describe('buildCardConfigEvent', () => {
+  describe('buildCardConfigPayload', () => {
     it('should build the config payload with received info', async () => {
       const pubkey =
         '9e34efffcc194e9636392a5937ce7986aef62f5f36b62312dcc7ddecd606b175';
@@ -80,6 +93,28 @@ describe('Config utils', () => {
       );
 
       expect(cardConfig).toStrictEqual(expectedCardConfig);
+    });
+  });
+  describe('buildCardDataEvent', () => {
+    it('should add card-data tags to multi nip04', async () => {
+      const pubkey =
+        '9e34efffcc194e9636392a5937ce7986aef62f5f36b62312dcc7ddecd606b175';
+      const event = {
+        pubkey,
+        created_at: 1700843212,
+        tags: [],
+        content: JSON.stringify({}),
+      };
+      const expectedEvent = {
+        ...event,
+        kind: 31111,
+        tags: [...event.tags, ['t', 'card-data'], ['d', `${pubkey}:card-data`]],
+      };
+      jest.mocked(buildMultiNip04Event).mockResolvedValue(event);
+
+      const cardDataEvent = await buildCardDataEvent(pubkey, prismaMock);
+
+      expect(cardDataEvent).toStrictEqual(expectedEvent);
     });
   });
 });
