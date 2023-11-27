@@ -1,7 +1,7 @@
 import { Debugger } from 'debug';
 import { Response } from 'express';
 
-import { buildCardDataEvent } from '@lib/config';
+import { buildCardDataEvent, buildCardDataPayload } from '@lib/config';
 import { getTagValue, parseEventBody } from '@lib/event';
 import { logger } from '@lib/utils';
 import { ExtendedRequest } from '@type/request';
@@ -27,7 +27,10 @@ const handler = async (req: ExtendedRequest, res: Response) => {
   try {
     const event = await buildCardDataEvent(reqEvent.pubkey, req.context.prisma);
     await req.context.outbox.publish(event);
-    res.status(200).send();
+    res
+      .status(200)
+      .json(await buildCardDataPayload(reqEvent.pubkey, req.context.prisma))
+      .send();
   } catch (e) {
     error('Unexpected error: %O', e);
     res.status(500).send();

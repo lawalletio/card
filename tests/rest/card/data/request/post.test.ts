@@ -1,4 +1,8 @@
-import { buildCardDataEvent } from '@lib/config';
+import {
+  CardDataPayload,
+  buildCardDataEvent,
+  buildCardDataPayload,
+} from '@lib/config';
 import { getTagValue, parseEventBody } from '@lib/event';
 import { NostrEvent } from '@nostr-dev-kit/ndk';
 
@@ -8,6 +12,7 @@ jest.mock('@lib/config', () => {
   return {
     __esModule: true,
     buildCardDataEvent: jest.fn(),
+    buildCardDataPayload: jest.fn(),
   };
 });
 jest.mock('@lib/event', () => {
@@ -26,9 +31,13 @@ describe('POST to /card/data/request', () => {
     const dataEvent = {
       id: '1234',
     };
+    const dataPayload = {};
     jest.mocked(parseEventBody).mockReturnValue(reqEvent as NostrEvent);
     jest.mocked(getTagValue).mockReturnValue('card-data-request');
     jest.mocked(buildCardDataEvent).mockResolvedValue(dataEvent as NostrEvent);
+    jest
+      .mocked(buildCardDataPayload)
+      .mockResolvedValue(dataPayload as CardDataPayload);
     const body = {};
     const req: any = {
       context: {
@@ -39,13 +48,16 @@ describe('POST to /card/data/request', () => {
       body,
     };
     const res: any = {
-      status: jest.fn().mockReturnValue({ send: jest.fn() }),
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn().mockReturnThis(),
+      send: jest.fn().mockReturnThis(),
     };
 
     await handler(req, res);
 
     expect(req.context.outbox.publish).toHaveBeenCalledWith(dataEvent);
     expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith(dataPayload);
   });
 
   it('should fail when received invalid request', async () => {
