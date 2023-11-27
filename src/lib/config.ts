@@ -37,6 +37,32 @@ export type CardConfigPayload = {
   cards: { [uuid: string]: CardPayload };
 };
 
+export async function buildCardDataPayload(
+  holderPubKey: string,
+  prisma: PrismaClient,
+): Promise<CardDataPayload> {
+  return Object.fromEntries(
+    (
+      await prisma.card.findMany({
+        where: {
+          holderPubKey: holderPubKey,
+        },
+        select: {
+          uuid: true,
+          ntag424: {
+            select: {
+              design: true,
+            },
+          },
+        },
+      })
+    ).map((data: { uuid: string; ntag424: { design: Design } }) => [
+      data.uuid,
+      { design: data.ntag424.design },
+    ]),
+  );
+}
+
 export async function buildCardConfigPayload(
   holderPubKey: string,
   prisma: PrismaClient,
@@ -150,28 +176,7 @@ export async function buildCardDataEvent(
   prisma: PrismaClient,
 ): Promise<NostrEvent> {
   const event: NostrEvent = await buildMultiNip04Event(
-    JSON.stringify(
-      Object.fromEntries(
-        (
-          await prisma.card.findMany({
-            where: {
-              holderPubKey: holderPubKey,
-            },
-            select: {
-              uuid: true,
-              ntag424: {
-                select: {
-                  design: true,
-                },
-              },
-            },
-          })
-        ).map((data: { uuid: string; ntag424: { design: Design } }) => [
-          data.uuid,
-          { design: data.ntag424.design },
-        ]),
-      ),
-    ),
+    JSON.stringify(buildCardDataPayload(holderPubKey, prisma)),
     cardPrivateKey,
     cardPublicKey,
     [cardPublicKey, holderPubKey],
