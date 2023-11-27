@@ -60,10 +60,9 @@ describe('POST to /card/config', () => {
     await handler(req, mockRes);
 
     expect(mockRes.status).toHaveBeenCalledWith(200);
-    expect(mockRes.send).toHaveBeenCalledWith(JSON.stringify(
-      config,
-      (_, v) => (typeof v === 'bigint' ? Number(v) : v),
-    ));
+    expect(mockRes.send).toHaveBeenCalledWith(
+      JSON.stringify(config, (_, v) => (typeof v === 'bigint' ? Number(v) : v)),
+    );
   });
 
   it('should fail when received invalid request', async () => {
