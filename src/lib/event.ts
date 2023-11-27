@@ -234,13 +234,12 @@ function doEncryptNip04Like(keyHex: string, message: string): string {
     Buffer.from(keyHex, 'hex'),
     iv,
   );
-  const ciphertext: Buffer = Buffer.from([
-    ...cipher.update(Buffer.from(message, 'utf8')),
-    ...cipher.final(),
-  ]);
-  return `${ciphertext.toString('base64')}?iv=${Buffer.from(iv).toString(
-    'base64',
-  )}`;
+  return (
+    Buffer.from([
+      ...cipher.update(Buffer.from(message, 'utf8')),
+      ...cipher.final(),
+    ]).toString('base64') + `?iv=${Buffer.from(iv).toString('base64')}`
+  );
 }
 
 /**
@@ -272,11 +271,10 @@ function doDecryptNip04Like(keyHex: string, message: string): string {
     Buffer.from(keyHex, 'hex'),
     Buffer.from(re.groups?.iv ?? '', 'base64'),
   );
-  const plaintext: Buffer = Buffer.from([
+  return Buffer.from([
     ...decipher.update(Buffer.from(re.groups?.ciphertext ?? '', 'base64')),
     ...decipher.final(),
-  ]);
-  return plaintext.toString('utf8');
+  ]).toString('utf8');
 }
 
 /**
