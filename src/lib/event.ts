@@ -79,7 +79,7 @@ export function parseEventBody(
     );
   } else if (expectedPubkey && event.pubkey !== expectedPubkey) {
     log(
-      'Expected pubkey mismatch --- expectedPubkey = %O / event.pubkey = ',
+      'Expected pubkey mismatch --- expectedPubkey = %O / event.pubkey = %O',
       expectedPubkey,
       event.pubkey,
     );
