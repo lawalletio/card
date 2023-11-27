@@ -20,7 +20,6 @@ jest.mock('@lib/event', () => {
 const mockRes: any = {
   status: jest.fn().mockReturnThis(),
   send: jest.fn().mockReturnThis(),
-  json: jest.fn().mockReturnThis(),
 };
 
 describe('POST to /card/config', () => {
@@ -61,7 +60,10 @@ describe('POST to /card/config', () => {
     await handler(req, mockRes);
 
     expect(mockRes.status).toHaveBeenCalledWith(200);
-    expect(mockRes.json).toHaveBeenCalledWith(config);
+    expect(mockRes.send).toHaveBeenCalledWith(JSON.stringify(
+      config,
+      (_, v) => (typeof v === 'bigint' ? Number(v) : v),
+    ));
   });
 
   it('should fail when received invalid request', async () => {
