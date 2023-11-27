@@ -29,8 +29,10 @@ const handler = async (req: ExtendedRequest, res: Response) => {
     await req.context.outbox.publish(event);
     res
       .status(200)
-      .json(await buildCardDataPayload(reqEvent.pubkey, req.context.prisma))
-      .send();
+      .send(JSON.stringify(
+        await buildCardDataPayload(reqEvent.pubkey, req.context.prisma),
+        (_, v) => (typeof v === 'bigint' ? Number(v) : v),
+      ));
   } catch (e) {
     error('Unexpected error: %O', e);
     res.status(500).send();

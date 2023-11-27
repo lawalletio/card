@@ -49,7 +49,6 @@ describe('POST to /card/data/request', () => {
     };
     const res: any = {
       status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
       send: jest.fn().mockReturnThis(),
     };
 
@@ -57,7 +56,7 @@ describe('POST to /card/data/request', () => {
 
     expect(req.context.outbox.publish).toHaveBeenCalledWith(dataEvent);
     expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.json).toHaveBeenCalledWith(dataPayload);
+    expect(res.send).toHaveBeenCalledWith(JSON.stringify(dataPayload));
   });
 
   it('should fail when received invalid request', async () => {
