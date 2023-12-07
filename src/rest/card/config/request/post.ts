@@ -25,14 +25,12 @@ const handler = async (req: ExtendedRequest, res: Response) => {
     return;
   }
   try {
-    res
-      .status(200)
-      .send(
-        JSON.stringify(
-          await buildCardConfigPayload(reqEvent.pubkey, req.context.prisma),
-          (_, v) => (typeof v === 'bigint' ? Number(v) : v),
-        ),
-      );
+    const cardConfigPayloadJson: string = JSON.stringify(
+      await buildCardConfigPayload(reqEvent.pubkey, req.context.prisma),
+      (_, v) => (typeof v === 'bigint' ? Number(v) : v),
+    );
+    log('Built card config payload: %O', cardConfigPayloadJson);
+    res.status(200).send(cardConfigPayloadJson);
   } catch (e) {
     error('Unexpected error: %O', e);
     res.status(500).send();
