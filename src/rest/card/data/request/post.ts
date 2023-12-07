@@ -26,6 +26,7 @@ const handler = async (req: ExtendedRequest, res: Response) => {
   }
   try {
     const event = await buildCardDataEvent(reqEvent.pubkey, req.context.prisma);
+    log('Built card data event: %O', event);
     await req.context.outbox.publish(event);
     res
       .status(200)
