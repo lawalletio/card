@@ -132,16 +132,18 @@ const getHandler = (ctx: Context): ((event: NostrEvent) => void) => {
           }),
         ),
       });
-      cardUuids.forEach(async (uuid) => {
-        await tx.card.update({
-          where: { uuid },
-          data: {
-            description: content.cards[uuid].description,
-            enabled: content.cards[uuid].status === CardStatus.ENABLED,
-            name: content.cards[uuid].name,
-          },
-        });
-      });
+      await Promise.all(
+        cardUuids.map((uuid) =>
+          tx.card.update({
+            where: { uuid },
+            data: {
+              description: content.cards[uuid].description,
+              enabled: content.cards[uuid].status === CardStatus.ENABLED,
+              name: content.cards[uuid].name,
+            },
+          }),
+        ),
+      );
     });
   };
 };
