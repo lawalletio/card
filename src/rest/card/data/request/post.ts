@@ -25,17 +25,17 @@ const handler = async (req: ExtendedRequest, res: Response) => {
     return;
   }
   try {
-    const event = await buildCardDataEvent(reqEvent.pubkey, req.context.prisma);
+    const cardDataPayloadJson: string = JSON.stringify(
+      await buildCardDataPayload(reqEvent.pubkey, req.context.prisma),
+      (_, v) => (typeof v === 'bigint' ? Number(v) : v),
+    );
+    const event = await buildCardDataEvent(
+      reqEvent.pubkey,
+      cardDataPayloadJson,
+    );
     log('Built card data event: %O', event);
     await req.context.outbox.publish(event);
-    res
-      .status(200)
-      .send(
-        JSON.stringify(
-          await buildCardDataPayload(reqEvent.pubkey, req.context.prisma),
-          (_, v) => (typeof v === 'bigint' ? Number(v) : v),
-        ),
-      );
+    res.status(200).send(cardDataPayloadJson);
   } catch (e) {
     error('Unexpected error: %O', e);
     res.status(500).send();
