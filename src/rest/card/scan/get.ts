@@ -128,7 +128,7 @@ const handleScan = async (req: ExtendedRequest, res: Response) => {
   if (!checkStatus(card)) {
     res
       .status(400)
-      .json({ status: 'ERROR', reason: 'Failed to retrieve card data' })
+      .json({ status: 'ERROR', reason: 'Card disabled' })
       .send();
     return;
   }
