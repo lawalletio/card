@@ -132,17 +132,15 @@ const getHandler = (ctx: Context): ((event: NostrEvent) => void) => {
           }),
         ),
       });
-      await tx.card.updateMany({
-        data: cardUuids.map(
-          (uuid: string): Prisma.CardUpdateManyMutationInput => {
-            return {
-              uuid: uuid,
-              description: content.cards[uuid].description,
-              enabled: content.cards[uuid].status === CardStatus.ENABLED,
-              name: content.cards[uuid].name,
-            };
+      cardUuids.forEach(async (uuid) => {
+        await tx.card.update({
+          where: { uuid },
+          data: {
+            description: content.cards[uuid].description,
+            enabled: content.cards[uuid].status === CardStatus.ENABLED,
+            name: content.cards[uuid].name,
           },
-        ),
+        });
       });
     });
   };
