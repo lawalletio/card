@@ -12,7 +12,7 @@ import type { ExtendedRequest } from '@type/request';
 import { Holder, Prisma, PrismaClient } from '@prisma/client';
 import { NDKEvent, NostrEvent } from '@nostr-dev-kit/ndk';
 import { getWriteNDK } from '@services/ndk';
-import { buildCardDataEvent } from '@lib/config';
+import { buildCardDataEvent, buildCardDataPayload } from '@lib/config';
 
 const log: Debugger = logger.extend('rest:card:post');
 const error: Debugger = log.extend('error');
@@ -251,7 +251,16 @@ const handler = async (req: ExtendedRequest, res: Response) => {
       },
     })
     .then(async (card) => {
-      const resEvent = new NDKEvent(
+      const cardDataPayloadJson: string = JSON.stringify(
+        await buildCardDataPayload(reqEvent.pubkey, req.context.prisma),
+        (_, v) => (typeof v === 'bigint' ? Number(v) : v),
+      );
+      const cardDataEvent = await buildCardDataEvent(
+        reqEvent.pubkey,
+        cardDataPayloadJson,
+      );
+      await req.context.outbox.publish(cardDataEvent);
+      const cardActivateEvent = new NDKEvent(
         getWriteNDK(),
         responseEvent(
           'card-activate-response',
@@ -261,16 +270,11 @@ const handler = async (req: ExtendedRequest, res: Response) => {
           reqEvent,
         ),
       );
-      await resEvent.sign();
-      const event = await buildCardDataEvent(
-        reqEvent.pubkey,
-        req.context.prisma,
-      );
-      await req.context.outbox.publish(event);
+      await cardActivateEvent.sign();
       res
         .status(201)
         .send(
-          JSON.stringify(await resEvent.toNostrEvent(), (_, v) =>
+          JSON.stringify(await cardActivateEvent.toNostrEvent(), (_, v) =>
             typeof v === 'bigint' ? Number(v) : v,
           ),
         );
