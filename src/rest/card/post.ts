@@ -2,6 +2,8 @@ import { Debugger } from 'debug';
 import type { Response } from 'express';
 
 import {
+  Kind,
+  buildMultiNip04Event,
   parseEventBody,
   responseEvent,
   validateDelegation,
@@ -12,10 +14,18 @@ import type { ExtendedRequest } from '@type/request';
 import { Holder, Prisma, PrismaClient } from '@prisma/client';
 import { NDKEvent, NostrEvent } from '@nostr-dev-kit/ndk';
 import { getWriteNDK } from '@services/ndk';
-import { buildCardDataEvent, buildCardDataPayload } from '@lib/config';
+import {
+  ConfigTypes,
+  buildCardConfigPayload,
+  buildCardDataEvent,
+  buildCardDataPayload,
+} from '@lib/config';
 
 const log: Debugger = logger.extend('rest:card:post');
 const error: Debugger = log.extend('error');
+
+const cardPrivateKey: string = requiredEnvVar('NOSTR_PRIVATE_KEY');
+const cardPublicKey: string = requiredEnvVar('NOSTR_PUBLIC_KEY');
 
 type DelegationReq = {
   since: Date;
@@ -259,7 +269,27 @@ const handler = async (req: ExtendedRequest, res: Response) => {
         reqEvent.pubkey,
         cardDataPayloadJson,
       );
-      await req.context.outbox.publish(cardDataEvent);
+      const cardConfigEvent: NostrEvent = await buildMultiNip04Event(
+        JSON.stringify(
+          await buildCardConfigPayload(reqEvent.pubkey, req.context.prisma),
+          (_, v) => (typeof v === 'bigint' ? String(v) : v),
+        ),
+        cardPrivateKey,
+        cardPublicKey,
+        [cardPublicKey, reqEvent.pubkey],
+      );
+      cardConfigEvent.kind = Kind.PARAMETRIZED_REPLACEABLE.valueOf();
+      cardConfigEvent.tags.concat([
+        ['e', reqEvent.id!],
+        ['t', ConfigTypes.CONFIG.valueOf()],
+        ['d', `${reqEvent.pubkey}:${ConfigTypes.CONFIG.valueOf()}`],
+      ]);
+
+      await Promise.all([
+        req.context.outbox.publish(cardDataEvent),
+        req.context.outbox.publish(cardConfigEvent),
+      ]);
+
       const cardActivateEvent = new NDKEvent(
         getWriteNDK(),
         responseEvent(
