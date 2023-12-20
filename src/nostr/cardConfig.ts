@@ -28,7 +28,7 @@ const filter: NDKFilter = {
 const cardPrivateKey: string = requiredEnvVar('NOSTR_PRIVATE_KEY');
 const cardPublicKey: string = requiredEnvVar('NOSTR_PUBLIC_KEY');
 
-const log: Debugger = logger.extend('rest:card:data:request:post');
+const log: Debugger = logger.extend('nostr:card:config:change');
 const error: Debugger = log.extend('error');
 
 /**
