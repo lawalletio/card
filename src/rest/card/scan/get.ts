@@ -126,10 +126,7 @@ const handleScan = async (req: ExtendedRequest, res: Response) => {
   // 2. check status & trusted merchants
   // TODO: TRUSTED MERCHANTS
   if (!checkStatus(card)) {
-    res
-      .status(400)
-      .json({ status: 'ERROR', reason: 'Card disabled' })
-      .send();
+    res.status(400).json({ status: 'ERROR', reason: 'Card disabled' }).send();
     return;
   }
 
