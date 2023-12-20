@@ -178,7 +178,7 @@ const handler = async (req: ExtendedRequest, res: Response) => {
     return;
   }
 
-  req.context.outbox
+  await req.context.outbox
     .publish(transactionEvent.ok)
     .then(() => {
       res.status(200).json({ status: 'OK' }).send();

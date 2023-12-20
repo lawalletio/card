@@ -148,7 +148,7 @@ const getHandler = (ctx: Context): ((event: NostrEvent) => void) => {
         ['d', `${holderPubKey}:${ConfigTypes.CONFIG.valueOf()}`],
       ]);
 
-      ctx.outbox.publish(configAckEvent);
+      await ctx.outbox.publish(configAckEvent);
     });
   };
 };
