@@ -1,6 +1,6 @@
 import type { NDKFilter, NostrEvent } from '@nostr-dev-kit/ndk';
 
-import { Kind, buildMultiNip04Event, validateNip26 } from '@lib/event';
+import { Kind, buildMultiNip04Event } from '@lib/event';
 import { nowInSeconds, requiredEnvVar } from '@lib/utils';
 
 import {
@@ -35,9 +35,6 @@ const getHandler = (ctx: Context): ((event: NostrEvent) => void) => {
    *
    */
   return async (event: NostrEvent) => {
-    if (!validateNip26(event)) {
-      throw new Error('Invalid delegation');
-    }
     const holderPubKey: string = event.pubkey;
     const content: CardConfigPayload = await parseCardConfigEvent(
       event,
