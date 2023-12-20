@@ -17,9 +17,9 @@ import { Context } from '@type/request';
 import { Prisma, PrismaClient } from '@prisma/client';
 
 const filter: NDKFilter = {
-  kinds: [Kind.PARAMETRIZED_REPLACEABLE.valueOf()],
+  kinds: [Kind.REGULAR.valueOf()],
   '#p': [requiredEnvVar('NOSTR_PUBLIC_KEY')],
-  '#t': [ConfigTypes.CONFIG.valueOf()],
+  '#t': [`${ConfigTypes.CONFIG.valueOf()}-request`],
   since: nowInSeconds() - 86000,
 };
 
