@@ -121,6 +121,7 @@ async function callIdentityProvider(
         newPubkey,
         oldDelegation,
       ),
+      (_, v) => (typeof v === 'bigint' ? String(v) : v),
     ),
     headers: {
       'Content-type': 'application/json',
@@ -198,7 +199,11 @@ function parseResetClaimReq(
  *  }
  */
 const handler = async (req: ExtendedRequest, res: Response) => {
-  debug(`Request body as JSON: ${JSON.stringify(req.body)}`);
+  debug(
+    `Request body as JSON: ${JSON.stringify(req.body, (_, v) =>
+      typeof v === 'bigint' ? String(v) : v,
+    )}`,
+  );
 
   const now: number = nowInSeconds();
 
@@ -308,13 +313,16 @@ const handler = async (req: ExtendedRequest, res: Response) => {
   try {
     await req.context.outbox.publish({
       created_at: now,
-      content: JSON.stringify({
-        tokens: await fetchBalances(
-          getReadNDK(),
-          oldHolder.pubKey,
-          tokensToTransferOnReset,
-        ),
-      }),
+      content: JSON.stringify(
+        {
+          tokens: await fetchBalances(
+            getReadNDK(),
+            oldHolder.pubKey,
+            tokensToTransferOnReset,
+          ),
+        },
+        (_, v) => (typeof v === 'bigint' ? String(v) : v),
+      ),
       tags: [
         ['p', ledgerPubKey],
         ['p', newHolder.pubKey],
@@ -369,12 +377,15 @@ const handler = async (req: ExtendedRequest, res: Response) => {
   }
 
   res.status(201).send(
-    JSON.stringify({
-      ...identityProviderResponse,
-      fundsTransferOK,
-      identityTransferOK,
-      identityTransferPropagationOK,
-    }),
+    JSON.stringify(
+      {
+        ...identityProviderResponse,
+        fundsTransferOK,
+        identityTransferOK,
+        identityTransferPropagationOK,
+      },
+      (_, v) => (typeof v === 'bigint' ? String(v) : v),
+    ),
   );
   return;
 };

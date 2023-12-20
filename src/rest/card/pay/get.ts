@@ -140,7 +140,9 @@ const generateTransactionEvent = async (
   return {
     ok: {
       created_at: nowInSeconds(),
-      content: JSON.stringify({ tokens: { BTC: msats } }),
+      content: JSON.stringify({ tokens: { BTC: msats } }, (_, v) =>
+        typeof v === 'bigint' ? String(v) : v,
+      ),
       tags: [
         ['p', ledgerPubKey],
         ['p', btcGatewayPubKey],

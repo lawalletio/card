@@ -27,7 +27,7 @@ const handler = async (req: ExtendedRequest, res: Response) => {
   try {
     const cardDataPayloadJson: string = JSON.stringify(
       await buildCardDataPayload(reqEvent.pubkey, req.context.prisma),
-      (_, v) => (typeof v === 'bigint' ? Number(v) : v),
+      (_, v) => (typeof v === 'bigint' ? String(v) : v),
     );
     const event = await buildCardDataEvent(
       reqEvent.pubkey,

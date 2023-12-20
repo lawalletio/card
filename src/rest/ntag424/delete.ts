@@ -54,7 +54,9 @@ const handler = async (req: ExtendedRequest, res: Response) => {
         getWriteNDK(),
         responseEvent(
           'card-delete-response',
-          JSON.stringify(ntag424),
+          JSON.stringify(ntag424, (_, v) =>
+            typeof v === 'bigint' ? String(v) : v,
+          ),
           reqEvent,
         ),
       );
@@ -63,7 +65,7 @@ const handler = async (req: ExtendedRequest, res: Response) => {
         .status(200)
         .send(
           JSON.stringify(await resEvent.toNostrEvent(), (_, v) =>
-            typeof v === 'bigint' ? Number(v) : v,
+            typeof v === 'bigint' ? String(v) : v,
           ),
         );
     })

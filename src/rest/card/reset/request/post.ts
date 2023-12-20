@@ -42,7 +42,11 @@ const getPubkeyFromPC = async (
 };
 
 const handler = async (req: ExtendedRequest, res: Response) => {
-  debug(`Request body as JSON: ${JSON.stringify(req.body)}`);
+  debug(
+    `Request body as JSON: ${JSON.stringify(req.body, (_, v) =>
+      typeof v === 'bigint' ? String(v) : v,
+    )}`,
+  );
   debug(`TARGET_P: ${['target_p'].every((t) => t in req.body)}`);
   debug(`TARGET_C: ${['target_c'].every((t) => t in req.body)}`);
   debug(`ADMIN_P: ${['admin_p'].every((t) => t in req.body)}`);

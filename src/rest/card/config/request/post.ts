@@ -27,7 +27,7 @@ const handler = async (req: ExtendedRequest, res: Response) => {
   try {
     const cardConfigPayloadJson: string = JSON.stringify(
       await buildCardConfigPayload(reqEvent.pubkey, req.context.prisma),
-      (_, v) => (typeof v === 'bigint' ? Number(v) : v),
+      (_, v) => (typeof v === 'bigint' ? String(v) : v),
     );
     log('Built card config payload: %O', cardConfigPayloadJson);
     res.status(200).send(cardConfigPayloadJson);

@@ -409,12 +409,15 @@ export async function buildMultiNip04Event(
     pubkey: senderPubKeyHex,
     created_at: nowInSeconds(),
     tags: receiverPubKeysHex.map((pk: string) => ['p', pk]),
-    content: JSON.stringify({
-      mac: macBase64,
-      enc: encryptedContentNip04Like,
-      key: receiverPubKeysHexToNip04RandomMessageKey,
-      alg: 'sha256:nip-04:nip-04',
-    }),
+    content: JSON.stringify(
+      {
+        mac: macBase64,
+        enc: encryptedContentNip04Like,
+        key: receiverPubKeysHexToNip04RandomMessageKey,
+        alg: 'sha256:nip-04:nip-04',
+      },
+      (_, v) => (typeof v === 'bigint' ? String(v) : v),
+    ),
   };
 }
 

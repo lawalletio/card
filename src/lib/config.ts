@@ -343,7 +343,10 @@ export async function buildCardConfigEvent(
   prisma: PrismaClient,
 ): Promise<NostrEvent> {
   const event: NostrEvent = await buildMultiNip04Event(
-    JSON.stringify(await buildCardConfigPayload(holderPubKey, prisma)),
+    JSON.stringify(
+      await buildCardConfigPayload(holderPubKey, prisma),
+      (_, v) => (typeof v === 'bigint' ? String(v) : v),
+    ),
     holderPrivKey,
     holderPubKey,
     [cardPublicKey, holderPubKey],

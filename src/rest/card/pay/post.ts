@@ -116,7 +116,9 @@ const generateTransactionEvent = async (
 
   return {
     created_at: nowInSeconds(),
-    content: JSON.stringify({ tokens: tokens }),
+    content: JSON.stringify({ tokens: tokens }, (_, v) =>
+      typeof v === 'bigint' ? String(v) : v,
+    ),
     tags: [
       ['p', ledgerPubKey],
       ['p', recipientPubkey],

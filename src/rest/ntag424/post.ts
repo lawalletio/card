@@ -134,14 +134,20 @@ const handler = async (req: ExtendedRequest, res: Response) => {
   }
   const resEvent = new NDKEvent(
     getWriteNDK(),
-    responseEvent('card-init-response', JSON.stringify(ntag424), reqEvent),
+    responseEvent(
+      'card-init-response',
+      JSON.stringify(ntag424, (_, v) =>
+        typeof v === 'bigint' ? String(v) : v,
+      ),
+      reqEvent,
+    ),
   );
   await resEvent.sign();
   res
     .status(201)
     .send(
       JSON.stringify(await resEvent.toNostrEvent(), (_, v) =>
-        typeof v === 'bigint' ? Number(v) : v,
+        typeof v === 'bigint' ? String(v) : v,
       ),
     );
 };

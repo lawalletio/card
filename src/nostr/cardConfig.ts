@@ -135,6 +135,7 @@ const getHandler = (ctx: Context): ((event: NostrEvent) => void) => {
       const configAckEvent: NostrEvent = await buildMultiNip04Event(
         JSON.stringify(
           await buildCardConfigPayload(holderPubKey, tx as PrismaClient),
+          (_, v) => (typeof v === 'bigint' ? String(v) : v),
         ),
         cardPrivateKey,
         cardPublicKey,

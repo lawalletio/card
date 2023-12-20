@@ -253,7 +253,7 @@ const handler = async (req: ExtendedRequest, res: Response) => {
     .then(async (card) => {
       const cardDataPayloadJson: string = JSON.stringify(
         await buildCardDataPayload(reqEvent.pubkey, req.context.prisma),
-        (_, v) => (typeof v === 'bigint' ? Number(v) : v),
+        (_, v) => (typeof v === 'bigint' ? String(v) : v),
       );
       const cardDataEvent = await buildCardDataEvent(
         reqEvent.pubkey,
@@ -265,7 +265,7 @@ const handler = async (req: ExtendedRequest, res: Response) => {
         responseEvent(
           'card-activate-response',
           JSON.stringify(card, (_, v) =>
-            typeof v === 'bigint' ? Number(v) : v,
+            typeof v === 'bigint' ? String(v) : v,
           ),
           reqEvent,
         ),
@@ -275,7 +275,7 @@ const handler = async (req: ExtendedRequest, res: Response) => {
         .status(201)
         .send(
           JSON.stringify(await cardActivateEvent.toNostrEvent(), (_, v) =>
-            typeof v === 'bigint' ? Number(v) : v,
+            typeof v === 'bigint' ? String(v) : v,
           ),
         );
     })

@@ -61,7 +61,7 @@ describe('POST to /card/config', () => {
 
     expect(mockRes.status).toHaveBeenCalledWith(200);
     expect(mockRes.send).toHaveBeenCalledWith(
-      JSON.stringify(config, (_, v) => (typeof v === 'bigint' ? Number(v) : v)),
+      JSON.stringify(config, (_, v) => (typeof v === 'bigint' ? String(v) : v)),
     );
   });
 
