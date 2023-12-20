@@ -40,6 +40,8 @@ const getHandler = (ctx: Context): ((event: NostrEvent) => void) => {
    *
    */
   return async (event: NostrEvent) => {
+    log('Handling card-config-change: %O', event);
+
     const holderPubKey: string = event.pubkey;
     const content: CardConfigPayload = await parseCardConfigEvent(
       event,
