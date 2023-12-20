@@ -1,6 +1,6 @@
 import type { NDKFilter, NostrEvent } from '@nostr-dev-kit/ndk';
 
-import { Kind, buildMultiNip04Event } from '@lib/event';
+import { Kind, buildMultiNip04Event, validateNip26 } from '@lib/event';
 import { nowInSeconds, requiredEnvVar } from '@lib/utils';
 
 import {
@@ -27,23 +27,6 @@ const cardPrivateKey: string = requiredEnvVar('NOSTR_PRIVATE_KEY');
 const cardPublicKey: string = requiredEnvVar('NOSTR_PUBLIC_KEY');
 
 /**
- * Extract value of first "d" tag adhering to the config template, or null if none found
- */
-function extractDPubkey(event: NostrEvent): string | null {
-  try {
-    return (
-      (event.tags.find(
-        (t: string[]): boolean =>
-          'd' === t[0] && t[1].endsWith(`:${ConfigTypes.CONFIG.valueOf()}`),
-      ) ?? [null, null])[1]?.split(':')[0] ?? null
-    );
-  } catch {
-    /* ... */
-  }
-  return null;
-}
-
-/**
  * Return the internal-transaction-ok handler
  */
 const getHandler = (ctx: Context): ((event: NostrEvent) => void) => {
@@ -52,11 +35,10 @@ const getHandler = (ctx: Context): ((event: NostrEvent) => void) => {
    *
    */
   return async (event: NostrEvent) => {
-    const holderPubKey: string | null = extractDPubkey(event);
-    if (null === holderPubKey) {
-      throw new Error('Missing holder pubkey');
+    if (!validateNip26(event)) {
+      throw new Error('Invalid delegation');
     }
-
+    const holderPubKey: string = event.pubkey;
     const content: CardConfigPayload = await parseCardConfigEvent(
       event,
       cardPrivateKey,

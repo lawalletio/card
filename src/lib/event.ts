@@ -40,7 +40,7 @@ export enum Kind {
  * If there is a valid delegation, change the pubkey of the event to
  * the delegator.
  */
-function validateNip26(event: NostrEvent): boolean {
+export function validateNip26(event: NostrEvent): boolean {
   if (event.tags.some((t) => 'delegation' === t[0])) {
     const delegator = nip26.getDelegator(event as Event<number>);
     if (delegator) {
