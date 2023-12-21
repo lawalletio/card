@@ -40,7 +40,7 @@ const getHandler = (ctx: Context): ((event: NostrEvent) => void) => {
    *
    */
   return async (event: NostrEvent) => {
-    log('Handling card-config-change: %O', (event as NDKEvent).toNostrEvent());
+    log('Handling card-config-change: %O', await (event as NDKEvent).toNostrEvent());
 
     const holderPubKey: string = event.pubkey;
     const content: CardConfigPayload = await parseCardConfigEvent(
@@ -98,7 +98,7 @@ const getHandler = (ctx: Context): ((event: NostrEvent) => void) => {
             },
           })
         ).map((x: { uuid: string }) => x.uuid);
-        log('Found the following holderPubkeys: %O', holderCardUuids);
+        log('Found the following card uuids: %O', holderCardUuids);
 
         const modifications: Promise<unknown>[] = [];
 
