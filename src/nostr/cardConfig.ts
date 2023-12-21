@@ -164,7 +164,7 @@ const getHandler = (ctx: Context): ((event: NostrEvent) => void) => {
           [cardPublicKey, holderPubKey],
         );
         configAckEvent.kind = Kind.PARAMETRIZED_REPLACEABLE.valueOf();
-        configAckEvent.tags.concat([
+        configAckEvent.tags = configAckEvent.tags.concat([
           ['e', event.id!],
           ['t', ConfigTypes.CONFIG.valueOf()],
           ['d', `${holderPubKey}:${ConfigTypes.CONFIG.valueOf()}`],

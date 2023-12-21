@@ -279,7 +279,7 @@ const handler = async (req: ExtendedRequest, res: Response) => {
         [cardPublicKey, reqEvent.pubkey],
       );
       cardConfigEvent.kind = Kind.PARAMETRIZED_REPLACEABLE.valueOf();
-      cardConfigEvent.tags.concat([
+      cardConfigEvent.tags = cardConfigEvent.tags.concat([
         ['e', reqEvent.id!],
         ['t', ConfigTypes.CONFIG.valueOf()],
         ['d', `${reqEvent.pubkey}:${ConfigTypes.CONFIG.valueOf()}`],
