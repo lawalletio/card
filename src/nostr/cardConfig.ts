@@ -1,4 +1,4 @@
-import type { NDKFilter, NostrEvent } from '@nostr-dev-kit/ndk';
+import type { NDKEvent, NDKFilter, NostrEvent } from '@nostr-dev-kit/ndk';
 
 import { Debugger } from 'debug';
 
@@ -40,7 +40,7 @@ const getHandler = (ctx: Context): ((event: NostrEvent) => void) => {
    *
    */
   return async (event: NostrEvent) => {
-    log('Handling card-config-change: %O', event);
+    log('Handling card-config-change: %O', (event as NDKEvent).toNostrEvent());
 
     const holderPubKey: string = event.pubkey;
     const content: CardConfigPayload = await parseCardConfigEvent(
@@ -51,7 +51,10 @@ const getHandler = (ctx: Context): ((event: NostrEvent) => void) => {
 
     try {
       await ctx.prisma.$transaction(async (tx) => {
+        log('Starting transaction');
+
         if ('trusted-merchants' in content) {
+          log('Found trusted-merchants: %O', content['trusted-merchants']);
           const merchantPubKeys: string[] = (
             await tx.merchant.findMany({
               select: {
@@ -80,6 +83,9 @@ const getHandler = (ctx: Context): ((event: NostrEvent) => void) => {
                 },
               ),
           });
+          log('Finished updating trusted merchants');
+        } else {
+          log('No trusted-merchants found');
         }
 
         const holderCardUuids: string[] = (
@@ -92,14 +98,18 @@ const getHandler = (ctx: Context): ((event: NostrEvent) => void) => {
             },
           })
         ).map((x: { uuid: string }) => x.uuid);
+        log('Found the following holderPubkeys: %O', holderCardUuids);
 
         const modifications: Promise<unknown>[] = [];
 
         for (const uuid in content.cards) {
+          log('Dealing with cardUuid: %O', uuid);
           if (!holderCardUuids.includes(uuid)) {
+            log('Not listed');
             continue;
           }
           if ('limits' in content.cards[uuid]) {
+            log('Found limits: %O', content.cards[uuid].limits);
             modifications.push(
               (async function (cardUuid: string) {
                 await tx.limit.deleteMany({ where: { cardUuid } });
@@ -117,6 +127,7 @@ const getHandler = (ctx: Context): ((event: NostrEvent) => void) => {
                     },
                   ),
                 });
+                log('Finished updating limits for cardUuid: %O', cardUuid);
               })(uuid),
             );
           }
@@ -133,13 +144,16 @@ const getHandler = (ctx: Context): ((event: NostrEvent) => void) => {
               content.cards[uuid].status === CardStatus.ENABLED;
           }
 
+          log('Will update: %O', cardUpdate);
           modifications.push(
             tx.card.update({ where: { uuid }, data: cardUpdate }),
           );
         }
 
         await Promise.all(modifications);
+        log('Finished updating');
 
+        log('Will send config-ack');
         const configAckEvent: NostrEvent = await buildMultiNip04Event(
           JSON.stringify(
             await buildCardConfigPayload(holderPubKey, tx as PrismaClient),
@@ -155,8 +169,10 @@ const getHandler = (ctx: Context): ((event: NostrEvent) => void) => {
           ['t', ConfigTypes.CONFIG.valueOf()],
           ['d', `${holderPubKey}:${ConfigTypes.CONFIG.valueOf()}`],
         ]);
+        log('Sending config-ack event: %O', configAckEvent);
 
         await ctx.outbox.publish(configAckEvent);
+        log('Finished handling card-config-change');
       });
     } catch (e) {
       error('Unexpected error: %O', e);
