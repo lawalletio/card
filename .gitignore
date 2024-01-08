@@ -2,6 +2,7 @@
 .*
 # But pay attention to certain specific ones
 !.env.example
+!.env.test
 !.envrc
 !.eslintrc
 !.gitattributes
