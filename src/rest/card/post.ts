@@ -10,7 +10,7 @@ import {
   validateDelegationConditions,
 } from '@lib/event';
 import { logger, requiredEnvVar } from '@lib/utils';
-import type { ExtendedRequest } from '@type/request';
+import type { ExtendedRequest, RestHandler } from '@type/request';
 import { Holder, Prisma, PrismaClient } from '@prisma/client';
 import { NDKEvent, NostrEvent } from '@nostr-dev-kit/ndk';
 import { getWriteNDK } from '@services/ndk';
@@ -186,7 +186,7 @@ function parseCardActivateReq(content: string): CardActivateReq {
  *    }
  *  }
  */
-const handler = async (req: ExtendedRequest, res: Response) => {
+const handler: RestHandler = async (req: ExtendedRequest, res: Response) => {
   const reqEvent: NostrEvent | null = parseEventBody(req.body);
   if (!reqEvent) {
     res.status(422).send();

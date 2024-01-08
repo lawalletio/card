@@ -1,7 +1,7 @@
 import { Debugger } from 'debug';
 
 import type { Response } from 'express';
-import type { ExtendedRequest } from '@type/request';
+import type { ExtendedRequest, RestHandler } from '@type/request';
 
 import { Card, Ntag424, PrismaClient } from '@prisma/client';
 
@@ -41,7 +41,7 @@ const getPubkeyFromPC = async (
   return { ok: card.holderPubKey };
 };
 
-const handler = async (req: ExtendedRequest, res: Response) => {
+const handler: RestHandler = async (req: ExtendedRequest, res: Response) => {
   debug(
     `Request body as JSON: ${JSON.stringify(req.body, (_, v) =>
       typeof v === 'bigint' ? String(v) : v,

@@ -1,6 +1,6 @@
 import { Debugger } from 'debug';
 import type { Response } from 'express';
-import type { ExtendedRequest } from '@type/request';
+import type { ExtendedRequest, RestHandler } from '@type/request';
 
 import {
   jsonParseOrNull,
@@ -569,9 +569,7 @@ const handleError = async (req: ExtendedRequest, res: Response) => {
   return;
 };
 
-type Handler = (_req: ExtendedRequest, _res: Response) => void;
-
-const actionHandlers: { [_action: string]: Handler } = {
+const actionHandlers: { [_action: string]: RestHandler } = {
   extendedScan: handleExtendedScan,
   identityQuery: handleIdentityQuery,
   info: handleInfo,
@@ -580,7 +578,7 @@ const actionHandlers: { [_action: string]: Handler } = {
   '': handleError,
 };
 
-const getHandler = (req: ExtendedRequest): Handler => {
+const getHandler = (req: ExtendedRequest): RestHandler => {
   const laWalletHeaders: {
     action: string;
     params: { [_: string]: string };
@@ -596,7 +594,7 @@ const getHandler = (req: ExtendedRequest): Handler => {
  * @param req  HTTP request to handle
  * @param res  HTTP response to send
  */
-const handler = async (req: ExtendedRequest, res: Response) => {
+const handler: RestHandler = async (req: ExtendedRequest, res: Response) => {
   getHandler(req)(req, res);
 };
 

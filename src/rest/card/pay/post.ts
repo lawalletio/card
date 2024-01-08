@@ -1,5 +1,5 @@
 import type { Response } from 'express';
-import type { ExtendedRequest } from '@type/request';
+import type { ExtendedRequest, RestHandler } from '@type/request';
 
 import {
   fetchBalances,
@@ -174,7 +174,7 @@ const validateContent = (content: string): PayReq | null => {
   return req as PayReq;
 };
 
-const handler = async (req: ExtendedRequest, res: Response) => {
+const handler: RestHandler = async (req: ExtendedRequest, res: Response) => {
   const reqEvent: NostrEvent | null = parseEventBody(req.body);
   if (null === reqEvent) {
     res

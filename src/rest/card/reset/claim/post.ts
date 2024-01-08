@@ -13,7 +13,7 @@ import {
   nowInSeconds,
   requiredEnvVar,
 } from '@lib/utils';
-import type { ExtendedRequest } from '@type/request';
+import type { ExtendedRequest, RestHandler } from '@type/request';
 import {
   Holder,
   Prisma,
@@ -198,7 +198,7 @@ function parseResetClaimReq(
  *    }
  *  }
  */
-const handler = async (req: ExtendedRequest, res: Response) => {
+const handler: RestHandler = async (req: ExtendedRequest, res: Response) => {
   debug(
     `Request body as JSON: ${JSON.stringify(req.body, (_, v) =>
       typeof v === 'bigint' ? String(v) : v,
