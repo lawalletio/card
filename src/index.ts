@@ -23,6 +23,7 @@ const writeNDK = getWriteNDK();
 const ctx: Context = {
   prisma: getPrisma(),
   outbox: new OutboxService(getWriteNDK()),
+  writeNDK,
 };
 
 // Instantiate ndk

@@ -13,7 +13,6 @@ import { logger, requiredEnvVar } from '@lib/utils';
 import type { ExtendedRequest, RestHandler } from '@type/request';
 import { Holder, Prisma, PrismaClient } from '@prisma/client';
 import { NDKEvent, NostrEvent } from '@nostr-dev-kit/ndk';
-import { getWriteNDK } from '@services/ndk';
 import {
   ConfigTypes,
   buildCardConfigPayload,
@@ -237,7 +236,7 @@ const handler: RestHandler = async (req: ExtendedRequest, res: Response) => {
     reqEvent.pubkey,
     content.delegation,
   );
-  req.context.prisma.card
+  await req.context.prisma.card
     .create({
       data: {
         name: ntag424.design.name,
@@ -291,7 +290,7 @@ const handler: RestHandler = async (req: ExtendedRequest, res: Response) => {
       ]);
 
       const cardActivateEvent = new NDKEvent(
-        getWriteNDK(),
+        req.context.writeNDK,
         responseEvent(
           'card-activate-response',
           JSON.stringify(card, (_, v) =>
@@ -303,11 +302,8 @@ const handler: RestHandler = async (req: ExtendedRequest, res: Response) => {
       await cardActivateEvent.sign();
       res
         .status(201)
-        .send(
-          JSON.stringify(await cardActivateEvent.toNostrEvent(), (_, v) =>
-            typeof v === 'bigint' ? String(v) : v,
-          ),
-        );
+        .json(await cardActivateEvent.toNostrEvent())
+        .send();
     })
     .catch((e) => {
       error('Unexpected error: %O', e);

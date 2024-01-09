@@ -14,7 +14,8 @@
   "scripts": {
     "postinstall": "prisma generate",
     "test": "DOTENV_CONFIG_PATH=.env.test jest",
-    "test:watch": "jest --watch",
+    "test:v": "DEBUG='* jest --verbose' DOTENV_CONFIG_PATH=.env.test jest",
+    "test:watch": "DOTENV_CONFIG_PATH=.env.test jest --watch",
     "dev": "concurrently \"pnpm run build:watch\" \"pnpm run dev:watch\"",
     "dev:watch": "nodemon --watch \"dist/**/*\" -w .env -r dotenv/config -e js ./dist/index.js",
     "build": "swc src -d dist --copy-files",
