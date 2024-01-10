@@ -4,6 +4,7 @@ import type { Response } from 'express';
 import {
   Kind,
   buildMultiNip04Event,
+  getTagValue,
   parseEventBody,
   responseEvent,
   validateDelegation,
@@ -36,6 +37,10 @@ type DelegationReq = {
 type CardActivateReq = {
   otc: string;
   delegation: DelegationReq;
+};
+
+type EventHandler = {
+  (event: NostrEvent, req: ExtendedRequest, res: Response): Promise<void>;
 };
 
 /**
@@ -170,8 +175,6 @@ function parseCardActivateReq(content: string): CardActivateReq {
 }
 
 /**
- * Endpoint for card activation.
- *
  * Takes a one time code and a nip26 delegation, if there is an
  * available ntag424 create a card record associated to the ntag and to
  * the holder.
@@ -185,12 +188,11 @@ function parseCardActivateReq(content: string): CardActivateReq {
  *    }
  *  }
  */
-const handler: RestHandler = async (req: ExtendedRequest, res: Response) => {
-  const reqEvent: NostrEvent | null = parseEventBody(req.body);
-  if (!reqEvent) {
-    res.status(422).send();
-    return;
-  }
+const cardActivationHandler: EventHandler = async (
+  reqEvent: NostrEvent,
+  req: ExtendedRequest,
+  res: Response,
+) => {
   let content: CardActivateReq;
   try {
     content = parseCardActivateReq(reqEvent.content);
@@ -292,7 +294,7 @@ const handler: RestHandler = async (req: ExtendedRequest, res: Response) => {
       const cardActivateEvent = new NDKEvent(
         req.context.writeNDK,
         responseEvent(
-          'card-activate-response',
+          'card-activation-response',
           JSON.stringify(card, (_, v) =>
             typeof v === 'bigint' ? String(v) : v,
           ),
@@ -309,6 +311,31 @@ const handler: RestHandler = async (req: ExtendedRequest, res: Response) => {
       error('Unexpected error: %O', e);
       res.status(500).send();
     });
+};
+
+/**
+ * Based on a received tag value it returns a handler for the request,
+ * returns a standard handler if no handler was found
+ */
+function getHandler(tag: string): EventHandler {
+  switch (tag) {
+    case 'card-activation-request':
+      return cardActivationHandler;
+    default:
+      return async (reqEvent, req, res) => {
+        log('Received invalid request: %0', reqEvent);
+        res.status(422).send();
+      };
+  }
+}
+
+const handler: RestHandler = async (req: ExtendedRequest, res: Response) => {
+  const reqEvent: NostrEvent | null = parseEventBody(req.body);
+  if (!reqEvent) {
+    res.status(422).send();
+    return;
+  }
+  await getHandler(getTagValue(reqEvent, 't') ?? '')(reqEvent, req, res);
 };
 
 export default handler;
