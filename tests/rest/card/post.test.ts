@@ -488,7 +488,7 @@ describe('POST /card', () => {
         id: '12345',
         tags: [['t', 'card-data']],
       } as NostrEvent;
-      jest.mocked(buildMultiNip04Event).mockResolvedValueOnce(cardConfigEvent);
+      jest.mocked(buildMultiNip04Event).mockResolvedValue(cardConfigEvent);
       jest.mocked(buildCardDataEvent).mockResolvedValueOnce(cardDataEvent);
       const card = { holderPubKey: reqEvent.pubkey, limits: [{ amount: 1n }] };
       const conditions = { kind: 1, since: 1, until: 1 };
@@ -520,7 +520,7 @@ describe('POST /card', () => {
         }),
         where: { holderPubKey: donationEvent.pubkey, uuid: cardUuid },
       });
-      expect(mockReq.context.outbox.publish).toHaveBeenCalledTimes(2);
+      expect(mockReq.context.outbox.publish).toHaveBeenCalledTimes(4);
       expect(mockReq.context.outbox.publish).toHaveBeenNthCalledWith(
         1,
         cardDataEvent,

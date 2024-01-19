@@ -463,7 +463,10 @@ const cardTransferHandler: EventHandler = async (
       },
     })
     .then(async (card) => {
-      await publishDataAndConfig(card.holderPubKey!, reqEvent.id!, req.context);
+      await Promise.all([
+        publishDataAndConfig(card.holderPubKey!, reqEvent.id!, req.context),
+        publishDataAndConfig(donor, reqEvent.id!, req.context),
+      ]);
       const response = new NDKEvent(
         req.context.writeNDK,
         responseEvent(
