@@ -20,7 +20,7 @@ FROM base AS build
 WORKDIR /app
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY . .
-RUN ["npm", "i", "-g", "@swc/cli"]
+RUN ["npm", "i", "-g", "@swc/cli@^0.1.62"]
 RUN ["npm", "run", "build"]
 
 
