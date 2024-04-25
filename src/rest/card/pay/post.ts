@@ -112,7 +112,7 @@ const generateTransactionEvent = async (
     return null;
   }
 
-  addPaymentsForPaymentRequest(prisma, paymentRequest, tokens);
+  await addPaymentsForPaymentRequest(prisma, paymentRequest, tokens);
 
   return {
     created_at: nowInSeconds(),

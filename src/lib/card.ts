@@ -351,12 +351,12 @@ HAVING
 
 export type Tokens = { [_: string]: number };
 
-export const addPaymentsForPaymentRequest = (
+export async function addPaymentsForPaymentRequest(
   prisma: PrismaClient,
   paymentRequest: PaymentRequest,
   tokens: Tokens,
-) => {
-  prisma.payment.createMany({
+): Promise<void> {
+  await prisma.payment.createMany({
     data: Object.entries(tokens).map((x: [string, number]) => {
       return {
         status: 'Paid',
@@ -367,4 +367,4 @@ export const addPaymentsForPaymentRequest = (
       };
     }),
   });
-};
+}
