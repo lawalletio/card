@@ -31,8 +31,8 @@ WORKDIR /app
 COPY --from=build --chown=nodejs:nodejs /app/dist ./dist
 COPY --from=build /app/node_modules ./node_modules
 USER nodejs
-ENV NODE_ENV production
-ENV PORT     3000
+ENV NODE_ENV=production
+ENV PORT=3000
 EXPOSE 3000
 
 ENTRYPOINT ["node", "dist/index.js"]
