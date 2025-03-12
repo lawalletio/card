@@ -176,7 +176,7 @@ const handleScan = async (req: ExtendedRequest, res: Response) => {
     .status(200)
     .send(
       JSON.stringify(response, (_, v) =>
-        typeof v === 'bigint' ? String(v) : v,
+        typeof v === 'bigint' ? Number(v) : v,
       ),
     );
 };
